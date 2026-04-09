@@ -43,13 +43,7 @@ export default function Footer() {
             ].map((item) => (
               <li key={item}>
                 <Link
-                  to={item === 'Contact Us' ? '/contact' : '/'}
-                  className='hover:text-white transition-colors'
-                >
-                  {item}
-                </Link>
-                <Link
-                  to={item === 'FAQ' ? '/faq' : '/'}
+                  to={item === 'Contact Us' ? '/contact' : item === 'FAQ' ? '/faq' : '/'}
                   className='hover:text-white transition-colors'
                 >
                   {item}
