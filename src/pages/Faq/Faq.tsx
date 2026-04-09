@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router'
 
 const Faq = () => {
   const scrollToSection = (e: string | number) => {
@@ -46,9 +47,11 @@ const Faq = () => {
     <div className='min-h-screen bg-white text-[#1a1a1a] font-sans p-4 md:p-10 '>
       {/* Breadcrumb */}
       <nav className='text-xs text-gray-500 mb-8 flex gap-1 max-w-7xl m-auto'>
-        <span className='hover:underline cursor-pointer'>Home</span>
+          <Link to='/' className='hover:text-blue-600 transition'>
+            Home
+          </Link>
         <span>›</span>
-        <span className='hover:underline cursor-pointer font-medium'>Login</span>
+        <span className='hover:underline cursor-pointer font-medium'>Text</span>
       </nav>
 
       {/* Main Container */}

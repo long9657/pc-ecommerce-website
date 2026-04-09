@@ -30,22 +30,32 @@ export default function Footer() {
             <h3 className='text-white text-sm font-semibold mb-4'>Information</h3>
             <ul className='space-y-2 text-sm'>
               {[
-                'About Us',
-                'About Zip',
-                'Privacy Policy',
-                'Search',
-                'Terms',
-                'Orders and Returns',
-                'Contact Us',
-                'Advanced Search',
-                'Newsletter Subscription'
-              ].map((item) => (
-                <li key={item}>
-                  <Link to='/' className='hover:text-white transition-colors'>
-                    {item}
-                  </Link>
-                </li>
-              ))}
+              'About Us',
+              'About Zip',
+              'Privacy Policy',
+              'Search',
+              'Terms',
+              'Orders and Returns',
+              'Contact Us',
+              'FAQ',
+              'Advanced Search',
+              'Newsletter Subscription'
+            ].map((item) => (
+              <li key={item}>
+                <Link
+                  to={item === 'Contact Us' ? '/contact' : '/'}
+                  className='hover:text-white transition-colors'
+                >
+                  {item}
+                </Link>
+                <Link
+                  to={item === 'FAQ' ? '/faq' : '/'}
+                  className='hover:text-white transition-colors'
+                >
+                  {item}
+                </Link>
+              </li>
+            ))}
             </ul>
           </div>
 

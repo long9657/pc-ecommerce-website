@@ -1,6 +1,7 @@
 import React from 'react'
 // Import các icons cần thiết từ thư viện react-icons
 import { HiOutlineLocationMarker, HiOutlinePhone, HiOutlineClock, HiOutlineMail } from 'react-icons/hi'
+import { Link } from 'react-router'
 
 const Contact: React.FC = () => {
   return (
@@ -9,9 +10,9 @@ const Contact: React.FC = () => {
       {/* 2. Phần Header (Breadcrumb & Title) */}
       <div className='container max-w-7xl mx-auto px-6 py-8 md:px-12 md:py-16'>
         <nav className='text-sm text-gray-600 mb-6 flex items-center space-x-2'>
-          <a href='#' className='hover:text-blue-600 transition'>
+          <Link to='/' className='hover:text-blue-600 transition'>
             Home
-          </a>
+          </Link>
           <span className='text-gray-400'>›</span>
           <span className='text-gray-900 font-medium'>Contact Us</span>
         </nav>

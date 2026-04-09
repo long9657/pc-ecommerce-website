@@ -1,7 +1,9 @@
 import { Link } from 'react-router'
 import Popover from '../Popover'
+import { useNavigate } from "react-router";
 
 function Header() {
+  const navigate = useNavigate();
   return (
     <header className='bg-white shadow-md'>
       <div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
@@ -65,10 +67,12 @@ function Header() {
           </Link>
           <button
             className='block w-full bg-white py-3 px-4 text-left hover:bg-slate-100 hover:text-cyan-500'
+            onClick={() => navigate("/login")}
           >
             Login
           </button>
-          <button className='block w-full bg-white py-3 px-4 text-left hover:bg-slate-100 hover:text-cyan-500'>
+          <button className='block w-full bg-white py-3 px-4 text-left hover:bg-slate-100 hover:text-cyan-500'
+          onClick={() => navigate("/")}>
             Logout
           </button>
         </div>}>
