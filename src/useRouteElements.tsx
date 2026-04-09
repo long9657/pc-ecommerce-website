@@ -6,6 +6,7 @@ import RegisterLayout from './layouts/RegisterLayout/RegisterLayout'
 import MainLayout from './layouts/MainLayout'
 import Contact from './pages/Contact'
 import Faq from './pages/Faq'
+import About from './pages/About/About'
 
 function useRouteElements() {
   const routeElements = useRoutes([
@@ -45,7 +46,15 @@ function useRouteElements() {
       path: '/faq',
       element: (
         <MainLayout>
-          <Faq   />
+          <Faq />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/about',
+      element: (
+        <MainLayout>
+          <About />
         </MainLayout>
       )
     }
