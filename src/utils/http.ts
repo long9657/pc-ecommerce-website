@@ -1,11 +1,11 @@
-import axios, { Axios, AxiosError, HttpStatusCode, type AxiosInstance } from 'axios'
+import axios, { AxiosError, HttpStatusCode, type AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
 
 class Http {
   instance: AxiosInstance
   constructor() {
     this.instance = axios.create({
-      baseURL: 'https://api-ecom.duthanhduoc.com/',
+      baseURL: 'http://localhost:8080/user/',
       timeout: 10000,
       headers: { 'Content-Type': 'application/json' }
     })

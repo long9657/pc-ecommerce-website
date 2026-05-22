@@ -1,11 +1,15 @@
 import { useRoutes } from 'react-router'
 import ProductList from './pages/ProductList/'
+import Products from './pages/Products'
 import Login from './pages/Login/'
 import Register from './pages/Register'
 import RegisterLayout from './layouts/RegisterLayout/RegisterLayout'
 import MainLayout from './layouts/MainLayout'
 import Contact from './pages/Contact'
 import Faq from './pages/Faq'
+import Profile from './pages/Profile'
+import Bills from './pages/Bills'
+import ProductDetail from './pages/ProductDetail'
 
 function useRouteElements() {
   const routeElements = useRoutes([
@@ -13,7 +17,23 @@ function useRouteElements() {
       path: '/',
       element: (
         <MainLayout>
-          <ProductList></ProductList>
+          <ProductList/>
+        </MainLayout>
+      )
+    },
+    {
+      path: '/products',
+      element: (
+        <MainLayout>
+          <Products />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/product/:id',
+      element: (
+        <MainLayout>
+          <ProductDetail/>
         </MainLayout>
       )
     },
@@ -46,6 +66,22 @@ function useRouteElements() {
       element: (
         <MainLayout>
           <Faq   />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/profile',
+      element: (
+        <MainLayout>
+          <Profile />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/bills',
+      element: (
+        <MainLayout>
+          <Bills />
         </MainLayout>
       )
     }
