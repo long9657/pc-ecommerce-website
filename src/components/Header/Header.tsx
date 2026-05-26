@@ -5,6 +5,8 @@ import Popover from '../Popover'
 import { useQuery } from '@tanstack/react-query'
 import { getPurchases } from '../../api/purchase.api'
 import { getCategories } from '../../api/category.api'
+import { generateNameId } from '../../utils/utils'
+
 
 function Header() {
   const navigate = useNavigate()
@@ -87,7 +89,8 @@ function Header() {
 
           <nav className='hidden lg:flex items-center gap-6 text-sm font-medium text-gray-700 font-sans select-none'>
             {categories.slice(0, 4).map((cat: any) => (
-              <Link key={cat._id} to={`/products?category=${cat._id}`} className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
+              <Link key={cat._id} to={`/products?category=${generateNameId({ name: cat.name, id: cat._id })}`}
+ className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
                 {cat.name}
               </Link>
             ))}

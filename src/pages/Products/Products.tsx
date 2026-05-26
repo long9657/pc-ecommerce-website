@@ -4,8 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
 import { getCategories } from '../../api/category.api'
 import { addToCart } from '../../api/purchase.api'
-import { generateNameId } from '../../utils/utils'
 import { toast } from 'react-toastify'
+import { generateNameId, getIdFromNameId } from '../../utils/utils'
+
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -14,6 +15,7 @@ export default function Products() {
 
   // 1. Get filters from URL Search Params
   const categoryFilter = searchParams.get('category') || 'All'
+  const categoryId = categoryFilter !== 'All' ? getIdFromNameId(categoryFilter) : 'All'
   const minPrice = searchParams.get('minPrice') || ''
   const maxPrice = searchParams.get('maxPrice') || ''
   const sortBy = searchParams.get('sort') || 'newest'
@@ -71,15 +73,16 @@ export default function Products() {
   const categories = categoriesData?.data?.result || []
 
   // Find Category Name for Display
-  const currentCategoryName = useMemo(() => {
+    const currentCategoryName = useMemo(() => {
     if (categoryFilter === 'All') return 'Full Hardware Store'
-    const cat = categories.find((c: any) => c._id === categoryFilter)
+    const cat = categories.find((c: any) => c._id === categoryId) // Đổi thành categoryId
     return cat ? cat.name : categoryFilter
-  }, [categoryFilter, categories])
+  }, [categoryFilter, categories, categoryId]) // Thêm categoryId vào dependency list
+
 
   // Fetch Products
   const queryConfig = {
-    category: categoryFilter !== 'All' ? categoryFilter : undefined,
+    category: categoryId !== 'All' ? categoryId : undefined,
     search: searchFilter || undefined,
     price_min: minPrice || undefined,
     price_max: maxPrice || undefined,
@@ -177,14 +180,14 @@ export default function Products() {
                 {(minPrice || maxPrice) && (
                   <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
                     ${minPrice || '0'} - ${maxPrice || '∞'}
-                    <button 
+                    <button
                       onClick={() => {
                         const newParams = new URLSearchParams(searchParams)
                         newParams.delete('minPrice')
                         newParams.delete('maxPrice')
                         setSearchParams(newParams)
                         setPriceInput({ min: '', max: '' })
-                      }} 
+                      }}
                       className='hover:text-rose-500 cursor-pointer font-black ml-1'
                     >
                       ×
@@ -199,19 +202,17 @@ export default function Products() {
               <div className='space-y-1.5'>
                 <button
                   onClick={() => updateFilter('category', 'All')}
-                  className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${
-                    categoryFilter === 'All' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
+                  className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${categoryFilter === 'All' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                    }`}
                 >
                   <span>All Categories</span>
                 </button>
                 {categories.map((cat: any) => (
                   <button
                     key={cat._id}
-                    onClick={() => updateFilter('category', cat._id)}
-                    className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${
-                      categoryFilter === cat._id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-                    }`}
+                    onClick={() => updateFilter('category', generateNameId({ name: cat.name, id: cat._id }))}
+                    className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${categoryFilter === cat._id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
                   >
                     <span>{cat.name}</span>
                   </button>
@@ -257,7 +258,7 @@ export default function Products() {
         </aside>
 
         <main className='flex-1'>
-          
+
           <div className='bg-white rounded-2xl p-4 border border-slate-200/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 mb-6'>
             <div className='text-xs font-bold text-slate-500 flex items-center gap-2'>
               {isFetching ? (
@@ -287,9 +288,8 @@ export default function Products() {
               <div className='flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/30'>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-lg transition cursor-pointer ${
-                    viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'
-                  }`}
+                  className={`p-1.5 rounded-lg transition cursor-pointer ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'
+                    }`}
                   title='Grid View'
                 >
                   <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -298,9 +298,8 @@ export default function Products() {
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-lg transition cursor-pointer ${
-                    viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'
-                  }`}
+                  className={`p-1.5 rounded-lg transition cursor-pointer ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'
+                    }`}
                   title='List View'
                 >
                   <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -334,176 +333,175 @@ export default function Products() {
               {products.map((product: any) => {
                 const inStock = product.quantity > 0
                 return (
-                <Link to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
-                  key={product._id}
-                  className='bg-white rounded-2xl p-5 flex flex-col justify-between border border-slate-200/60 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden'
-                >
-                  <div>
-                    <div className='flex items-center gap-1.5 text-[9px] font-extrabold uppercase select-none mb-3'>
-                      <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                      <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
-                        {inStock ? 'In Stock' : 'Out of Stock'}
-                      </span>
-                    </div>
-                    <div className='h-40 my-3 flex items-center justify-center bg-slate-50/60 rounded-2xl p-4 overflow-hidden relative border border-slate-100'>
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out select-none'
-                      />
-                    </div>
-                    <div className='flex items-center gap-1.5 my-3.5 select-none'>
-                      <div className='flex text-amber-400'>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-3.5 h-3.5 fill-current ${
-                              i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
-                            }`}
-                            viewBox='0 0 20 20'
-                          >
-                            <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className='text-[10px] text-slate-400 font-bold'>
-                        Đã bán ({product.sold || 0})
-                      </span>
-                    </div>
-
-                    <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-2 min-h-[36px]'>
-                      {product.name}
-                    </h3>
-                  </div>
-                  <div className='pt-3 border-t border-slate-100/70 flex items-center justify-between mt-auto'>
+                  <Link to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                    key={product._id}
+                    className='bg-white rounded-2xl p-5 flex flex-col justify-between border border-slate-200/60 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden'
+                  >
                     <div>
-                      {product.price_before_discount && (
-                        <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                      <div className='flex items-center gap-1.5 text-[9px] font-extrabold uppercase select-none mb-3'>
+                        <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
+                          {inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
-                      )}
-                      <div className='text-sm font-black text-slate-900 leading-none mt-1'>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                       </div>
-                    </div>
+                      <div className='h-40 my-3 flex items-center justify-center bg-slate-50/60 rounded-2xl p-4 overflow-hidden relative border border-slate-100'>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out select-none'
+                        />
+                      </div>
+                      <div className='flex items-center gap-1.5 my-3.5 select-none'>
+                        <div className='flex text-amber-400'>
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <svg
+                              key={i}
+                              className={`w-3.5 h-3.5 fill-current ${i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
+                                }`}
+                              viewBox='0 0 20 20'
+                            >
+                              <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className='text-[10px] text-slate-400 font-bold'>
+                          Đã bán ({product.sold || 0})
+                        </span>
+                      </div>
 
-                    <button
-                      onClick={(e) => {e.preventDefault() 
-                                      e.stopPropagation() 
-                                      handleAddToCart(product._id)
-                                    }} 
-                      disabled={!inStock}
-                      className={`h-9 w-9 rounded-xl flex items-center justify-center transition cursor-pointer select-none ${
-                        inStock
+                      <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-2 min-h-[36px]'>
+                        {product.name}
+                      </h3>
+                    </div>
+                    <div className='pt-3 border-t border-slate-100/70 flex items-center justify-between mt-auto'>
+                      <div>
+                        {product.price_before_discount && (
+                          <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                          </span>
+                        )}
+                        <div className='text-sm font-black text-slate-900 leading-none mt-1'>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleAddToCart(product._id)
+                        }}
+                        disabled={!inStock}
+                        className={`h-9 w-9 rounded-xl flex items-center justify-center transition cursor-pointer select-none ${inStock
                           ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      }`}
-                      title={inStock ? 'Add to Cart' : 'Out of Stock'}
-                    >
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
-                      </svg>
-                    </button>
-                  </div>
-                </Link>
-              )})}
+                          }`}
+                        title={inStock ? 'Add to Cart' : 'Out of Stock'}
+                      >
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
+                        </svg>
+                      </button>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           ) : (
             <div className='space-y-4'>
               {products.map((product: any) => {
                 const inStock = product.quantity > 0;
                 return (
-                <Link
+                  <Link
                     key={product._id}
                     to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
                     className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center gap-6 group relative overflow-hidden text-inherit no-underline block'
                   >
 
-                  <div className='w-full sm:w-[180px] h-[140px] bg-slate-50/60 rounded-xl flex items-center justify-center p-4 relative border border-slate-100 flex-shrink-0'>
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 select-none'
-                    />
-                  </div>
+                    <div className='w-full sm:w-[180px] h-[140px] bg-slate-50/60 rounded-xl flex items-center justify-center p-4 relative border border-slate-100 flex-shrink-0'>
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 select-none'
+                      />
+                    </div>
 
-                  <div className='flex-1 min-w-0 w-full'>
-                    <div className='flex items-center gap-3 select-none mb-1.5'>
-                      <div className='flex items-center gap-1 text-[9px] font-extrabold uppercase'>
-                        <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                        <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
-                          {inStock ? 'In Stock' : 'Out of Stock'}
+                    <div className='flex-1 min-w-0 w-full'>
+                      <div className='flex items-center gap-3 select-none mb-1.5'>
+                        <div className='flex items-center gap-1 text-[9px] font-extrabold uppercase'>
+                          <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
+                            {inStock ? 'In Stock' : 'Out of Stock'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-1'>
+                        {product.name}
+                      </h3>
+
+                      <p className='text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed'>
+                        {product.description}
+                      </p>
+
+                      <div className='flex items-center gap-1.5 my-2 select-none'>
+                        <div className='flex text-amber-400'>
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <svg
+                              key={i}
+                              className={`w-3.5 h-3.5 fill-current ${i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
+                                }`}
+                              viewBox='0 0 20 20'
+                            >
+                              <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className='text-[10px] text-slate-400 font-bold'>
+                          Đã bán ({product.sold || 0})
                         </span>
                       </div>
                     </div>
 
-                    <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-1'>
-                      {product.name}
-                    </h3>
-                    
-                    <p className='text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed'>
-                      {product.description}
-                    </p>
-
-                    <div className='flex items-center gap-1.5 my-2 select-none'>
-                      <div className='flex text-amber-400'>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-3.5 h-3.5 fill-current ${
-                              i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
-                            }`}
-                            viewBox='0 0 20 20'
-                          >
-                            <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                          </svg>
-                        ))}
+                    <div className='w-full sm:w-[150px] sm:border-l border-slate-100 sm:pl-6 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-4 flex-shrink-0'>
+                      <div>
+                        {product.price_before_discount && (
+                          <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                          </span>
+                        )}
+                        <div className='text-base font-black text-slate-900 leading-none mt-1.5'>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                        </div>
                       </div>
-                      <span className='text-[10px] text-slate-400 font-bold'>
-                        Đã bán ({product.sold || 0})
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className='w-full sm:w-[150px] sm:border-l border-slate-100 sm:pl-6 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-4 flex-shrink-0'>
-                    <div>
-                      {product.price_before_discount && (
-                        <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
-                        </span>
-                      )}
-                      <div className='text-base font-black text-slate-900 leading-none mt-1.5'>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={(e) => {
-                        handleAddToCart(product._id)
-                        e.preventDefault()
-                        e.stopPropagation()
-                      }}
-                      disabled={!inStock}
-                      className={`h-9 px-4 w-full rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase transition cursor-pointer select-none ${
-                        inStock
+                      <button
+                        onClick={(e) => {
+                          handleAddToCart(product._id)
+                          e.preventDefault()
+                          e.stopPropagation()
+                        }}
+                        disabled={!inStock}
+                        className={`h-9 px-4 w-full rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase transition cursor-pointer select-none ${inStock
                           ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
-                      </svg>
-                      <span>Add to Cart</span>
-                    </button>
-                  </div>
-                </Link>
-              )})}
+                          }`}
+                      >
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
+                        </svg>
+                        <span>Add to Cart</span>
+                      </button>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
 
           {pagination.page_size > 1 && (
             <div className='flex items-center justify-center gap-2 mt-12 mb-6 select-none'>
-              <button 
+              <button
                 onClick={() => updateFilter('page', String(Math.max(1, pagination.page - 1)))}
                 disabled={pagination.page === 1}
                 className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed'
@@ -516,17 +514,16 @@ export default function Products() {
                   <button
                     key={pageNum}
                     onClick={() => updateFilter('page', String(pageNum))}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition cursor-pointer ${
-                      pagination.page === pageNum
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-blue-600 hover:text-white'
-                    }`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition cursor-pointer ${pagination.page === pageNum
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:bg-blue-600 hover:text-white'
+                      }`}
                   >
                     {pageNum}
                   </button>
                 )
               })}
-              <button 
+              <button
                 onClick={() => updateFilter('page', String(Math.min(pagination.page_size, pagination.page + 1)))}
                 disabled={pagination.page === pagination.page_size}
                 className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed'

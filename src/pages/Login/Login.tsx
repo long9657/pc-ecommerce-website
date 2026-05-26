@@ -14,6 +14,7 @@ type LoginFormData = LoginSchema
 export default function Login() {
   const navigate = useNavigate()
   const {
+    setError,
     register,
     formState: { errors },
     handleSubmit
