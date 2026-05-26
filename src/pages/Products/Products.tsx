@@ -1,19 +1,24 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router'
-import { MOCK_PRODUCTS } from '../../utils/mockProducts'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getProducts } from '../../api/product.api'
+import { getCategories } from '../../api/category.api'
+import { addToCart } from '../../api/purchase.api'
+import { generateNameId } from '../../utils/utils'
+import { toast } from 'react-toastify'
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [cartFeedback, setCartFeedback] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   // 1. Get filters from URL Search Params
   const categoryFilter = searchParams.get('category') || 'All'
-  const brandFilter = searchParams.get('brand') || 'All'
   const minPrice = searchParams.get('minPrice') || ''
   const maxPrice = searchParams.get('maxPrice') || ''
-  const sortBy = searchParams.get('sort') || 'featured'
+  const sortBy = searchParams.get('sort') || 'newest'
   const searchFilter = searchParams.get('search') || ''
+  const page = searchParams.get('page') || '1'
 
   // Input states for price filter (so it doesn't trigger URL updates on every keystroke)
   const [priceInput, setPriceInput] = useState({
@@ -35,6 +40,7 @@ export default function Products() {
     } else {
       newParams.delete('maxPrice')
     }
+    newParams.set('page', '1') // Reset page on filter change
     setSearchParams(newParams)
   }
 
@@ -46,6 +52,9 @@ export default function Products() {
     } else {
       newParams.set(key, value)
     }
+    if (key !== 'page') {
+      newParams.set('page', '1') // Reset page on filter change
+    }
     setSearchParams(newParams)
   }
 
@@ -54,83 +63,60 @@ export default function Products() {
     setPriceInput({ min: '', max: '' })
   }
 
-  // 2. Dynamic Count Calculations
-  const counts = useMemo(() => {
-    const categories: Record<string, number> = {}
-    const brands: Record<string, number> = {}
-    
-    MOCK_PRODUCTS.forEach(p => {
-      categories[p.category] = (categories[p.category] || 0) + 1
-      brands[p.brand] = (brands[p.brand] || 0) + 1
-    })
+  // Fetch Categories
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => getCategories()
+  })
+  const categories = categoriesData?.data?.result || []
 
-    return { categories, brands }
-  }, [])
+  // Find Category Name for Display
+  const currentCategoryName = useMemo(() => {
+    if (categoryFilter === 'All') return 'Full Hardware Store'
+    const cat = categories.find((c: any) => c._id === categoryFilter)
+    return cat ? cat.name : categoryFilter
+  }, [categoryFilter, categories])
 
-  // 3. Filtering & Sorting Logic
-  const filteredProducts = useMemo(() => {
-    let result = [...MOCK_PRODUCTS]
+  // Fetch Products
+  const queryConfig = {
+    category: categoryFilter !== 'All' ? categoryFilter : undefined,
+    search: searchFilter || undefined,
+    price_min: minPrice || undefined,
+    price_max: maxPrice || undefined,
+    sort: sortBy,
+    page: page,
+    limit: 12
+  }
 
-    // Category
-    if (categoryFilter !== 'All') {
-      result = result.filter(p => p.category === categoryFilter)
-    }
+  const { data: productsData, isFetching } = useQuery({
+    queryKey: ['products', queryConfig],
+    queryFn: () => getProducts(queryConfig)
+  })
 
-    // Brand
-    if (brandFilter !== 'All') {
-      result = result.filter(p => p.brand === brandFilter)
-    }
+  const products = productsData?.data?.result?.products || []
+  const pagination = productsData?.data?.result?.pagination || { page: 1, limit: 12, page_size: 1, total_items: 0 }
 
-    // Min Price
-    if (minPrice) {
-      const minVal = parseFloat(minPrice)
-      if (!isNaN(minVal)) {
-        result = result.filter(p => p.price >= minVal)
+  const addToCartMutation = useMutation({
+    mutationFn: (productId: string) => addToCart({ product_id: productId, buy_count: 1 }),
+    onSuccess: () => {
+      toast.success('Đã thêm sản phẩm vào giỏ hàng!')
+      queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
+    },
+    onError: (error: any) => {
+      if (error.response?.status === 422 || error.response?.status === 401) {
+        toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!')
+      } else {
+        toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng!')
       }
     }
+  })
 
-    // Max Price
-    if (maxPrice) {
-      const maxVal = parseFloat(maxPrice)
-      if (!isNaN(maxVal)) {
-        result = result.filter(p => p.price <= maxVal)
-      }
-    }
-
-    if (searchFilter) {
-      result = result.filter(p => p.name.toLowerCase().includes(searchFilter.toLocaleLowerCase()))
-    }
-
-    // Sorting
-    if (sortBy === 'price-asc') {
-      result.sort((a, b) => a.price - b.price)
-    } else if (sortBy === 'price-desc') {
-      result.sort((a, b) => b.price - a.price)
-    } else if (sortBy === 'rating') {
-      result.sort((a, b) => b.rating - a.rating)
-    } else if (sortBy === 'name') {
-      result.sort((a, b) => a.name.localeCompare(b.name))
-    }
-
-    return result
-  }, [categoryFilter, brandFilter, minPrice, maxPrice, sortBy, searchFilter])
-
-  // Mock add to cart micro-animation feedback
-  const handleAddToCart = (productName: string) => {
-    setCartFeedback(productName)
-    setTimeout(() => {
-      setCartFeedback(null)
-    }, 2000)
+  const handleAddToCart = (productId: string) => {
+    addToCartMutation.mutate(productId)
   }
 
   return (
     <div className='min-h-screen bg-slate-50 font-sans p-6'>
-      {cartFeedback && (
-        <div className='fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce'>
-          <span className='w-2 h-2 rounded-full bg-emerald-500 animate-ping' />
-          <span className='text-xs font-bold'>Added to Cart: {cartFeedback}</span>
-        </div>
-      )}
 
       <nav className='max-w-7xl mx-auto flex items-center gap-2 text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-6'>
         <Link to='/' className='hover:text-blue-600 transition'>Home</Link>
@@ -139,7 +125,7 @@ export default function Products() {
         {categoryFilter !== 'All' && (
           <>
             <span>/</span>
-            <span className='text-slate-900 font-black'>{categoryFilter}</span>
+            <span className='text-slate-900 font-black'>{currentCategoryName}</span>
           </>
         )}
       </nav>
@@ -148,10 +134,10 @@ export default function Products() {
         <div className='absolute right-0 top-0 w-[50%] h-full opacity-10 bg-radial-gradient from-blue-400 to-transparent pointer-events-none' />
         <div className='max-w-xl text-white relative z-10 select-none'>
           <span className='text-[10px] font-extrabold tracking-widest uppercase bg-blue-600/30 text-blue-400 px-3.5 py-1.5 rounded-full border border-blue-500/20'>
-            {brandFilter !== 'All' ? brandFilter : 'All Brands'}
+            Products
           </span>
           <h1 className='text-3xl md:text-4xl font-extrabold mt-4 tracking-tight leading-tight uppercase font-sans'>
-            {categoryFilter !== 'All' ? categoryFilter : 'Full Hardware Store'}
+            {currentCategoryName}
           </h1>
           <p className='text-slate-400 mt-2 text-xs md:text-sm leading-relaxed font-medium opacity-90'>
             Discover raw power and performance components customized for bleeding-edge esports environments. Filter and customize below.
@@ -164,7 +150,7 @@ export default function Products() {
           <div className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm'>
             <div className='flex items-center justify-between border-b border-slate-100 pb-4 mb-4'>
               <h2 className='text-sm font-extrabold text-slate-800 uppercase tracking-wider'>Filters</h2>
-              {(categoryFilter !== 'All' || brandFilter !== 'All' || minPrice || maxPrice) && (
+              {(categoryFilter !== 'All' || minPrice || maxPrice || searchFilter) && (
                 <button
                   onClick={clearAllFilters}
                   className='text-[10px] font-bold text-rose-500 hover:text-rose-600 underline cursor-pointer'
@@ -174,18 +160,18 @@ export default function Products() {
               )}
             </div>
 
-            {(categoryFilter !== 'All' || brandFilter !== 'All' || minPrice || maxPrice) && (
+            {(categoryFilter !== 'All' || minPrice || maxPrice || searchFilter) && (
               <div className='flex flex-wrap gap-1.5 mb-6 border-b border-slate-100 pb-4'>
                 {categoryFilter !== 'All' && (
                   <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
-                    {categoryFilter}
+                    {currentCategoryName}
                     <button onClick={() => updateFilter('category', 'All')} className='hover:text-rose-500 cursor-pointer font-black ml-1'>×</button>
                   </span>
                 )}
-                {brandFilter !== 'All' && (
+                {searchFilter && (
                   <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
-                    {brandFilter}
-                    <button onClick={() => updateFilter('brand', 'All')} className='hover:text-rose-500 cursor-pointer font-black ml-1'>×</button>
+                    "{searchFilter}"
+                    <button onClick={() => updateFilter('search', '')} className='hover:text-rose-500 cursor-pointer font-black ml-1'>×</button>
                   </span>
                 )}
                 {(minPrice || maxPrice) && (
@@ -218,58 +204,17 @@ export default function Products() {
                   }`}
                 >
                   <span>All Categories</span>
-                  <span className={`text-[10px] ${categoryFilter === 'All' ? 'text-white' : 'text-slate-400'}`}>
-                    {MOCK_PRODUCTS.length}
-                  </span>
                 </button>
-                {['Laptops', 'Desktop PCs', 'Peripherals', 'PC Parts'].map(cat => (
+                {categories.map((cat: any) => (
                   <button
-                    key={cat}
-                    onClick={() => updateFilter('category', cat)}
+                    key={cat._id}
+                    onClick={() => updateFilter('category', cat._id)}
                     className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${
-                      categoryFilter === cat ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                      categoryFilter === cat._id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
                     }`}
                   >
-                    <span>{cat}</span>
-                    <span className={`text-[10px] ${categoryFilter === cat ? 'text-white' : 'text-slate-400'}`}>
-                      {counts.categories[cat] || 0}
-                    </span>
+                    <span>{cat.name}</span>
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <div className='space-y-3 mb-6 pt-4 border-t border-slate-100'>
-              <h3 className='text-xs font-extrabold text-slate-700 uppercase tracking-widest'>Brands</h3>
-              <div className='space-y-1'>
-                <label className='flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='brand'
-                    checked={brandFilter === 'All'}
-                    onChange={() => updateFilter('brand', 'All')}
-                    className='accent-blue-600'
-                  />
-                  <span className={`text-xs font-semibold ${brandFilter === 'All' ? 'text-slate-900 font-bold' : 'text-slate-500'}`}>
-                    All Brands
-                  </span>
-                </label>
-                {['MSI', 'Razer', 'Gigabyte', 'ASUS ROG'].map(br => (
-                  <label key={br} className='flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition cursor-pointer'>
-                    <input
-                      type='radio'
-                      name='brand'
-                      checked={brandFilter === br}
-                      onChange={() => updateFilter('brand', br)}
-                      className='accent-blue-600'
-                    />
-                    <span className={`text-xs font-semibold ${brandFilter === br ? 'text-slate-900 font-black' : 'text-slate-500'}`}>
-                      {br}
-                    </span>
-                    <span className='ml-auto text-[10px] text-slate-400 font-bold'>
-                      ({counts.brands[br] || 0})
-                    </span>
-                  </label>
                 ))}
               </div>
             </div>
@@ -314,8 +259,14 @@ export default function Products() {
         <main className='flex-1'>
           
           <div className='bg-white rounded-2xl p-4 border border-slate-200/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 mb-6'>
-            <div className='text-xs font-bold text-slate-500'>
-              Showing <span className='text-slate-900'>{filteredProducts.length}</span> products matching your criteria
+            <div className='text-xs font-bold text-slate-500 flex items-center gap-2'>
+              {isFetching ? (
+                <div className='animate-pulse w-32 h-4 bg-slate-200 rounded' />
+              ) : (
+                <>
+                  Showing <span className='text-slate-900'>{pagination.total_items}</span> products matching your criteria
+                </>
+              )}
             </div>
 
             <div className='flex items-center gap-4 w-full md:w-auto justify-between md:justify-end'>
@@ -326,11 +277,10 @@ export default function Products() {
                   onChange={e => updateFilter('sort', e.target.value)}
                   className='bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 py-1.5 px-3 rounded-xl focus:outline-none focus:border-blue-500 cursor-pointer transition'
                 >
-                  <option value='featured'>Featured</option>
-                  <option value='price-asc'>Price: Low to High</option>
-                  <option value='price-desc'>Price: High to Low</option>
-                  <option value='rating'>Top Rated</option>
-                  <option value='name'>Name: A to Z</option>
+                  <option value='newest'>Newest Arrivals</option>
+                  <option value='price_asc'>Price: Low to High</option>
+                  <option value='price_desc'>Price: High to Low</option>
+                  <option value='top_sales'>Top Sales</option>
                 </select>
               </div>
 
@@ -361,7 +311,7 @@ export default function Products() {
             </div>
           </div>
 
-          {filteredProducts.length === 0 && (
+          {!isFetching && products.length === 0 && (
             <div className='bg-white rounded-3xl p-12 text-center border border-slate-200/60 shadow-sm'>
               <div className='w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm animate-pulse mb-4'>
                 🔎
@@ -381,29 +331,25 @@ export default function Products() {
 
           {viewMode === 'grid' ? (
             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
-              {filteredProducts.map(product => (
-                <Link to={`/product/${product.id}`}
-                  key={product.id}
+              {products.map((product: any) => {
+                const inStock = product.quantity > 0
+                return (
+                <Link to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                  key={product._id}
                   className='bg-white rounded-2xl p-5 flex flex-col justify-between border border-slate-200/60 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden'
                 >
-                  {product.badge && (
-                    <span className='absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold uppercase tracking-widest text-[8px] px-2.5 py-1 rounded-full shadow-sm z-10 select-none'>
-                      {product.badge}
-                    </span>
-                  )}
-
                   <div>
                     <div className='flex items-center gap-1.5 text-[9px] font-extrabold uppercase select-none mb-3'>
-                      <span className={`w-1.5 h-1.5 rounded-full ${product.inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                      <span className={product.inStock ? 'text-emerald-600' : 'text-rose-500'}>
-                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                      <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                      <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
+                        {inStock ? 'In Stock' : 'Out of Stock'}
                       </span>
                     </div>
                     <div className='h-40 my-3 flex items-center justify-center bg-slate-50/60 rounded-2xl p-4 overflow-hidden relative border border-slate-100'>
                       <img
                         src={product.image}
                         alt={product.name}
-                        className='max-h-full max-w-full object-contain group-hover:scale-108 transition-transform duration-500 ease-out select-none'
+                        className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out select-none'
                       />
                     </div>
                     <div className='flex items-center gap-1.5 my-3.5 select-none'>
@@ -412,7 +358,7 @@ export default function Products() {
                           <svg
                             key={i}
                             className={`w-3.5 h-3.5 fill-current ${
-                              i < Math.floor(product.rating) ? 'text-amber-400' : 'text-slate-200'
+                              i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
                             }`}
                             viewBox='0 0 20 20'
                           >
@@ -421,84 +367,38 @@ export default function Products() {
                         ))}
                       </div>
                       <span className='text-[10px] text-slate-400 font-bold'>
-                        Reviews ({product.reviewsCount})
+                        Đã bán ({product.sold || 0})
                       </span>
                     </div>
 
                     <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-2 min-h-[36px]'>
                       {product.name}
                     </h3>
-
-
-                    <div className='bg-slate-50 border border-slate-100 rounded-xl p-2.5 my-3.5 space-y-1 text-[10px] text-slate-500 font-bold'>
-                      {product.specs.cpu && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>CPU:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.cpu}</span>
-                        </div>
-                      )}
-                      {product.specs.gpu && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>GPU:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.gpu}</span>
-                        </div>
-                      )}
-                      {product.specs.ram && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>RAM:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.ram}</span>
-                        </div>
-                      )}
-                      {product.specs.switchType && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>Switch:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.switchType}</span>
-                        </div>
-                      )}
-                      {product.specs.sensor && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>Sensor:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.sensor}</span>
-                        </div>
-                      )}
-                      {product.specs.chipset && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>Chipset:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.chipset}</span>
-                        </div>
-                      )}
-                      {product.specs.power && (
-                        <div className='flex justify-between'>
-                          <span className='text-slate-400'>Output:</span>
-                          <span className='text-slate-700 text-right'>{product.specs.power}</span>
-                        </div>
-                      )}
-                    </div>
                   </div>
                   <div className='pt-3 border-t border-slate-100/70 flex items-center justify-between mt-auto'>
                     <div>
-                      {product.oldPrice && (
+                      {product.price_before_discount && (
                         <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                          ${product.oldPrice.toFixed(2)}
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
                         </span>
                       )}
                       <div className='text-sm font-black text-slate-900 leading-none mt-1'>
-                        ${product.price.toFixed(2)}
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                       </div>
                     </div>
 
                     <button
                       onClick={(e) => {e.preventDefault() 
                                       e.stopPropagation() 
-                                      handleAddToCart(product.name)
+                                      handleAddToCart(product._id)
                                     }} 
-                      disabled={!product.inStock}
+                      disabled={!inStock}
                       className={`h-9 w-9 rounded-xl flex items-center justify-center transition cursor-pointer select-none ${
-                        product.inStock
+                        inStock
                           ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       }`}
-                      title={product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                      title={inStock ? 'Add to Cart' : 'Out of Stock'}
                     >
                       <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
@@ -506,22 +406,18 @@ export default function Products() {
                     </button>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
           ) : (
             <div className='space-y-4'>
-              {filteredProducts.map(product => (
+              {products.map((product: any) => {
+                const inStock = product.quantity > 0;
+                return (
                 <Link
-                    key={product.id}
-                    to={`/product/${product.id}`}
+                    key={product._id}
+                    to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
                     className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center gap-6 group relative overflow-hidden text-inherit no-underline block'
                   >
-
-                  {product.badge && (
-                    <span className='absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold uppercase tracking-widest text-[8px] px-2.5 py-1 rounded-full shadow-sm z-10 select-none'>
-                      {product.badge}
-                    </span>
-                  )}
 
                   <div className='w-full sm:w-[180px] h-[140px] bg-slate-50/60 rounded-xl flex items-center justify-center p-4 relative border border-slate-100 flex-shrink-0'>
                     <img
@@ -533,13 +429,10 @@ export default function Products() {
 
                   <div className='flex-1 min-w-0 w-full'>
                     <div className='flex items-center gap-3 select-none mb-1.5'>
-                      <span className='text-[10px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-100/50 px-2.5 py-0.5 rounded'>
-                        {product.brand}
-                      </span>
                       <div className='flex items-center gap-1 text-[9px] font-extrabold uppercase'>
-                        <span className={`w-1.5 h-1.5 rounded-full ${product.inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                        <span className={product.inStock ? 'text-emerald-600' : 'text-rose-500'}>
-                          {product.inStock ? 'In Stock' : 'Out of Stock'}
+                        <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
+                          {inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                       </div>
                     </div>
@@ -547,6 +440,10 @@ export default function Products() {
                     <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-1'>
                       {product.name}
                     </h3>
+                    
+                    <p className='text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed'>
+                      {product.description}
+                    </p>
 
                     <div className='flex items-center gap-1.5 my-2 select-none'>
                       <div className='flex text-amber-400'>
@@ -554,7 +451,7 @@ export default function Products() {
                           <svg
                             key={i}
                             className={`w-3.5 h-3.5 fill-current ${
-                              i < Math.floor(product.rating) ? 'text-amber-400' : 'text-slate-200'
+                              i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
                             }`}
                             viewBox='0 0 20 20'
                           >
@@ -563,41 +460,32 @@ export default function Products() {
                         ))}
                       </div>
                       <span className='text-[10px] text-slate-400 font-bold'>
-                        Reviews ({product.reviewsCount})
+                        Đã bán ({product.sold || 0})
                       </span>
-                    </div>
-
-                    <div className='flex flex-wrap gap-2 mt-3'>
-                      {Object.entries(product.specs).map(([key, val]) => (
-                        <div key={key} className='bg-slate-100/80 border border-slate-200/30 text-[9px] font-extrabold text-slate-600 uppercase px-2.5 py-1 rounded-lg flex items-center gap-1.5'>
-                          <span className='text-slate-400'>{key}:</span>
-                          <span>{val}</span>
-                        </div>
-                      ))}
                     </div>
                   </div>
 
                   <div className='w-full sm:w-[150px] sm:border-l border-slate-100 sm:pl-6 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-4 flex-shrink-0'>
                     <div>
-                      {product.oldPrice && (
+                      {product.price_before_discount && (
                         <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                          ${product.oldPrice.toFixed(2)}
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
                         </span>
                       )}
                       <div className='text-base font-black text-slate-900 leading-none mt-1.5'>
-                        ${product.price.toFixed(2)}
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                       </div>
                     </div>
 
                     <button
                       onClick={(e) => {
-                        handleAddToCart(product.name)
+                        handleAddToCart(product._id)
                         e.preventDefault()
                         e.stopPropagation()
                       }}
-                      disabled={!product.inStock}
+                      disabled={!inStock}
                       className={`h-9 px-4 w-full rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase transition cursor-pointer select-none ${
-                        product.inStock
+                        inStock
                           ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       }`}
@@ -609,25 +497,40 @@ export default function Products() {
                     </button>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
           )}
 
-          {filteredProducts.length > 0 && (
+          {pagination.page_size > 1 && (
             <div className='flex items-center justify-center gap-2 mt-12 mb-6 select-none'>
-              <button className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold'>
+              <button 
+                onClick={() => updateFilter('page', String(Math.max(1, pagination.page - 1)))}
+                disabled={pagination.page === 1}
+                className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed'
+              >
                 «
               </button>
-              <button className='w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-black shadow-sm shadow-blue-200'>
-                1
-              </button>
-              <button className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold'>
-                2
-              </button>
-              <button className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold'>
-                3
-              </button>
-              <button className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold'>
+              {Array.from({ length: pagination.page_size }).map((_, idx) => {
+                const pageNum = idx + 1
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => updateFilter('page', String(pageNum))}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition cursor-pointer ${
+                      pagination.page === pageNum
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-blue-600 hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+              <button 
+                onClick={() => updateFilter('page', String(Math.min(pagination.page_size, pagination.page + 1)))}
+                disabled={pagination.page === pagination.page_size}
+                className='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed'
+              >
                 »
               </button>
             </div>

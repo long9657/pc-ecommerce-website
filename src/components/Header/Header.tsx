@@ -2,6 +2,9 @@ import { Link, useNavigate, useLocation } from 'react-router'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import Popover from '../Popover'
+import { useQuery } from '@tanstack/react-query'
+import { getPurchases } from '../../api/purchase.api'
+import { getCategories } from '../../api/category.api'
 
 function Header() {
   const navigate = useNavigate()
@@ -9,6 +12,12 @@ function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [username, setUsername] = useState<string>('')
   const [searchValue, setSearchValue] = useState('')
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => getCategories()
+  })
+  const categories = categoriesData?.data?.result || []
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -27,6 +36,13 @@ function Header() {
       }
     }
   }, [location.pathname])
+
+  const { data: cartData } = useQuery({
+    queryKey: ['purchases', 0],
+    queryFn: () => getPurchases({ status: 0 }),
+    enabled: isAuthenticated
+  })
+  const cartItemsCount = cartData?.data?.result?.length || 0
 
   const handleLogout = () => {
     localStorage.removeItem('access_token')
@@ -70,16 +86,17 @@ function Header() {
             </Link>
 
           <nav className='hidden lg:flex items-center gap-6 text-sm font-medium text-gray-700 font-sans select-none'>
-            <Link to='/products?category=Laptops' className='hover:text-blue-600 transition-colors'>Laptops</Link>
-            <Link to='/products?category=Desktop PCs' className='hover:text-blue-600 transition-colors'>Desktop PCs</Link>
-            <Link to='/products?category=Peripherals' className='hover:text-blue-600 transition-colors'>Peripherals</Link>
-            <Link to='/products?category=PC Parts' className='hover:text-blue-600 transition-colors'>PC Parts</Link>
-            <Link to='/products' className='hover:text-blue-600 transition-colors'>All Other Products</Link>
+            {categories.slice(0, 4).map((cat: any) => (
+              <Link key={cat._id} to={`/products?category=${cat._id}`} className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
+                {cat.name}
+              </Link>
+            ))}
+            <Link to='/products' className='hover:text-blue-600 transition-colors text-xs font-bold uppercase'>Tất cả</Link>
             <Link
               to='/products'
               className='border border-blue-600 text-blue-600 px-4 py-1.5 rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300 font-bold text-xs uppercase'
             >
-              Our Deals
+              Khuyến Mãi
             </Link>
           </nav>
 
@@ -95,16 +112,16 @@ function Header() {
 
 
           {/* Cart */}
-          <Popover renderPopover={<div className='relative rounded-sm border border-gray-200 bg-white shadow-md'>
-
-          </div>}>
-            <Link to='/' className='relative text-gray-600 hover:text-blue-600'>
-              <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-6 h-6'>
-                <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z' />
-              </svg>
-              <span className='absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center'>2</span>
-            </Link>
-          </Popover>
+          <Link to='/bills' className='relative text-gray-600 hover:text-blue-600 transition-colors'>
+            <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-6 h-6'>
+              <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z' />
+            </svg>
+            {cartItemsCount > 0 && (
+              <span className='absolute -top-2 -right-2 bg-rose-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm'>
+                {cartItemsCount}
+              </span>
+            )}
+          </Link>
 
 
           {/* Account */}

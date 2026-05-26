@@ -4,11 +4,10 @@ import type { LoginSchema } from '../../utils/rules'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { loginSchema } from '../../utils/rules'
 import Input from '../../components/Input'
-import { isAxiosUnprocessableEntityError } from '../../utils/utils'
-import type ResponseApi from '../../types/response.type'
 import { useMutation } from '@tanstack/react-query'
 import { LoginAccount } from '../../api/auth.api'
 import { toast } from 'react-toastify'
+import { isAxiosUnprocessableEntityError } from '../../utils/utils'
 
 type LoginFormData = LoginSchema
 
@@ -30,27 +29,26 @@ export default function Login() {
     const body = data
     LoginAccountMutation.mutate(body, {
       onSuccess: (res: any) => {
-        const token = res?.data?.data?.access_token || 'mock_token_123'
-        const user = res?.data?.data?.user || { name: data.username }
-        localStorage.setItem('access_token', token)
-        localStorage.setItem('profile', JSON.stringify(user))
         toast.success('Đăng nhập thành công')
         navigate('/')
       },
       onError: (error) => {
-        console.log({ error })
-        // Fallback mockup đăng nhập khi Backend chưa sẵn sàng/lỗi kết nối
-        localStorage.setItem('access_token', 'mock_token_123')
-        localStorage.setItem('profile', JSON.stringify({ name: data.username, email: `${data.username}@example.com` }))
-        toast.success('Đăng nhập thành công')
-        navigate('/')
+        if (isAxiosUnprocessableEntityError<any>(error)) {
+          const formError = error.response?.data?.errors
+          if (formError) {
+            Object.keys(formError).forEach((key) => {
+              setError(key as keyof LoginFormData, {
+                message: formError[key].msg,
+                type: 'Server'
+              })
+            })
+          }
+        } else {
+          toast.error('Đăng nhập thất bại, vui lòng thử lại!')
+        }
       }
     })
   })
-
-  // const rules = getRules(getValues)
-  // (data) => console.log(data)
-  console.log('error', errors)
 
   return (
     <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
@@ -59,13 +57,13 @@ export default function Login() {
 
         <form onSubmit={onSubmit} noValidate>
           <div className='mb-4'>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Tên đăng nhập</label>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>Email</label>
             <Input
-              type='text'
-              name='username'
-              placeholder='Nhập tên đăng nhập'
+              type='email'
+              name='email'
+              placeholder='Nhập email'
               register={register}
-              errorMessage={errors.username?.message}
+              errorMessage={errors.email?.message}
             />
           </div>
 
@@ -83,8 +81,15 @@ export default function Login() {
 
           <button
             type='submit'
-            className='w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition'
+            disabled={LoginAccountMutation.isLoading}
+            className='w-full flex justify-center items-center gap-2 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-70 disabled:cursor-not-allowed'
           >
+            {LoginAccountMutation.isLoading && (
+              <svg className='animate-spin h-5 w-5 text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+              </svg>
+            )}
             Đăng nhập
           </button>
         </form>

@@ -1,109 +1,155 @@
 import { useState } from 'react'
-
-interface BillItem {
-  id: string
-  date: string
-  products: { name: string; quantity: number; price: number }[]
-  total: number
-  status: 'Pending' | 'Shipping' | 'Completed' | 'Cancelled'
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getPurchases, buyPurchases, deletePurchases, updatePurchase } from '../../api/purchase.api'
+import { toast } from 'react-toastify'
 
 export default function Bills() {
-  const [bills] = useState<BillItem[]>([
-    {
-      id: 'PCSTORE-10248',
-      date: '2026-05-18',
-      products: [
-        { name: 'Bàn phím cơ Razer BlackWidow V4 Pro', quantity: 1, price: 5490000 },
-        { name: 'Chuột Gaming ASUS ROG Harpe Ace Extreme', quantity: 1, price: 4290000 }
-      ],
-      total: 9780000,
-      status: 'Shipping'
-    },
-    {
-      id: 'PCSTORE-09941',
-      date: '2026-04-12',
-      products: [
-        { name: 'Laptop Gaming MSI Raider GE78 HX', quantity: 1, price: 68990000 }
-      ],
-      total: 68990000,
-      status: 'Completed'
-    },
-    {
-      id: 'PCSTORE-08412',
-      date: '2026-03-05',
-      products: [
-        { name: 'Card màn hình ASUS ROG Strix RTX 4090 OC', quantity: 1, price: 59990000 },
-        { name: 'Nguồn ASUS ROG Thor 1200W Platinum II', quantity: 1, price: 8990000 }
-      ],
-      total: 68980000,
-      status: 'Completed'
-    }
-  ])
+  const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState<'cart' | 'history'>('cart')
 
-  const getStatusBadge = (status: BillItem['status']) => {
-    switch (status) {
-      case 'Pending':
-        return <span className='px-2.5 py-1 text-xs font-semibold rounded-full bg-yellow-50 text-yellow-600 border border-yellow-100'>Chờ xử lý</span>
-      case 'Shipping':
-        return <span className='px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-600 border border-blue-100'>Đang giao hàng</span>
-      case 'Completed':
-        return <span className='px-2.5 py-1 text-xs font-semibold rounded-full bg-green-50 text-green-600 border border-green-100'>Đã hoàn thành</span>
-      case 'Cancelled':
-        return <span className='px-2.5 py-1 text-xs font-semibold rounded-full bg-red-50 text-red-600 border border-red-100'>Đã hủy</span>
+  const { data: cartData } = useQuery({
+    queryKey: ['purchases', 0],
+    queryFn: () => getPurchases({ status: 0 })
+  })
+
+  const { data: historyData } = useQuery({
+    queryKey: ['purchases', 1],
+    queryFn: () => getPurchases({ status: 1 })
+  })
+
+  const cartItems = cartData?.data?.result || []
+  const historyItems = historyData?.data?.result || []
+
+  const updatePurchaseMutation = useMutation({
+    mutationFn: (data: { id: string, buy_count: number }) => updatePurchase(data.id, { buy_count: data.buy_count }),
+    onSuccess: () => queryClient.invalidateQueries(['purchases', 0])
+  })
+
+  const deletePurchaseMutation = useMutation({
+    mutationFn: (ids: string[]) => deletePurchases({ purchase_ids: ids }),
+    onSuccess: () => queryClient.invalidateQueries(['purchases', 0])
+  })
+
+  const buyPurchaseMutation = useMutation({
+    mutationFn: (ids: string[]) => buyPurchases({ purchase_ids: ids }),
+    onSuccess: () => {
+      toast.success('Đặt hàng thành công!')
+      queryClient.invalidateQueries(['purchases', 0])
+      queryClient.invalidateQueries(['purchases', 1])
+      setActiveTab('history')
     }
-  }
+  })
+
+  const totalCartValue = cartItems.reduce((acc: number, item: any) => acc + (item.product?.price || 0) * item.buy_count, 0)
+  const totalHistoryValue = historyItems.reduce((acc: number, item: any) => acc + (item.product?.price || 0) * item.buy_count, 0)
 
   return (
     <div className='max-w-4xl mx-auto px-4 py-8 font-sans'>
-      <div className='mb-6'>
-        <h2 className='text-2xl font-bold text-gray-800'>Lịch sử mua hàng</h2>
-        <p className='text-sm text-gray-500 mt-1'>Theo dõi trạng thái và lịch sử tất cả các hóa đơn của bạn</p>
+      <div className='mb-6 flex gap-4 border-b border-gray-200 pb-2'>
+        <button 
+          onClick={() => setActiveTab('cart')}
+          className={`text-lg font-bold pb-2 ${activeTab === 'cart' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
+        >
+          Giỏ hàng ({cartItems.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('history')}
+          className={`text-lg font-bold pb-2 ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
+        >
+          Đơn hàng chờ xử lý ({historyItems.length})
+        </button>
       </div>
 
-      <div className='space-y-4'>
-        {bills.map((bill) => (
-          <div key={bill.id} className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:border-blue-300 transition duration-300'>
-            <div className='bg-gray-50 px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3'>
-              <div>
-                <span className='text-xs text-gray-400 font-medium uppercase'>Mã hóa đơn</span>
-                <h3 className='text-sm font-bold text-blue-600'>{bill.id}</h3>
-              </div>
-              <div className='flex items-center gap-4 text-sm'>
-                <div>
-                  <span className='text-xs text-gray-400 font-medium block text-right'>Ngày mua</span>
-                  <span className='font-medium text-gray-700'>{bill.date}</span>
-                </div>
-                <div>
-                  <span className='text-xs text-gray-400 font-medium block text-right'>Trạng thái</span>
-                  {getStatusBadge(bill.status)}
-                </div>
-              </div>
-            </div>
-
-            <div className='px-6 py-4 divide-y divide-gray-100'>
-              {bill.products.map((prod, idx) => (
-                <div key={idx} className='py-3 flex justify-between items-center text-sm gap-4'>
+      {activeTab === 'cart' && (
+        <div className='space-y-4'>
+          {cartItems.length === 0 ? (
+            <div className='text-center py-10 text-gray-500'>Giỏ hàng của bạn đang trống.</div>
+          ) : (
+            <>
+              {cartItems.map((item: any) => (
+                <div key={item._id} className='bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex gap-4 items-center'>
+                  <img src={item.product?.image} alt={item.product?.name} className='w-20 h-20 object-contain rounded-lg bg-gray-50' />
                   <div className='flex-1'>
-                    <h4 className='font-semibold text-gray-800 line-clamp-1'>{prod.name}</h4>
-                    <p className='text-xs text-gray-400 mt-0.5'>Số lượng: {prod.quantity}</p>
+                    <h4 className='font-semibold text-gray-800 line-clamp-2'>{item.product?.name}</h4>
+                    <span className='font-bold text-rose-600 mt-2 block'>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.product?.price || 0)}
+                    </span>
                   </div>
-                  <span className='font-bold text-gray-700'>
-                    {prod.price.toLocaleString('vi-VN')} đ
-                  </span>
+                  <div className='flex items-center gap-2 border border-gray-200 rounded-lg p-1'>
+                    <button 
+                      onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: Math.max(1, item.buy_count - 1) })}
+                      className='w-6 h-6 bg-gray-100 rounded flex items-center justify-center font-bold text-gray-600'
+                    >
+                      -
+                    </button>
+                    <span className='w-8 text-center text-sm font-semibold'>{item.buy_count}</span>
+                    <button 
+                      onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count + 1 })}
+                      className='w-6 h-6 bg-gray-100 rounded flex items-center justify-center font-bold text-gray-600'
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => deletePurchaseMutation.mutate([item._id])}
+                    className='text-red-500 font-semibold text-xs ml-4'
+                  >
+                    Xóa
+                  </button>
                 </div>
               ))}
-            </div>
+              <div className='bg-gray-50 p-6 rounded-xl border border-gray-200 mt-6 flex justify-between items-center'>
+                <div>
+                  <span className='text-gray-500 block text-sm font-semibold'>Tổng tiền thanh toán:</span>
+                  <span className='text-2xl font-black text-rose-600'>
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalCartValue)}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => buyPurchaseMutation.mutate(cartItems.map((i: any) => i._id))}
+                  className='bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition'
+                >
+                  THANH TOÁN NGAY
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-            <div className='bg-gray-50/50 px-6 py-4 border-t border-gray-100 flex justify-between items-center'>
-              <span className='text-xs text-gray-500 font-medium'>Tổng giá trị đơn hàng:</span>
-              <span className='text-lg font-extrabold text-red-600'>
-                {bill.total.toLocaleString('vi-VN')} đ
-              </span>
+      {activeTab === 'history' && (
+        <div className='space-y-4'>
+          {historyItems.length === 0 ? (
+            <div className='text-center py-10 text-gray-500'>Bạn chưa có đơn hàng nào đang chờ.</div>
+          ) : (
+            <div className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
+              <div className='bg-blue-50 px-6 py-4 border-b border-blue-100'>
+                <h3 className='font-bold text-blue-700'>Trạng thái: Đang chờ Chủ Shop xác nhận</h3>
+              </div>
+              <div className='px-6 py-4 divide-y divide-gray-100'>
+                {historyItems.map((item: any) => (
+                  <div key={item._id} className='py-4 flex justify-between items-center gap-4'>
+                    <img src={item.product?.image} className='w-16 h-16 object-contain rounded-lg bg-gray-50' />
+                    <div className='flex-1'>
+                      <h4 className='font-semibold text-gray-800 line-clamp-1'>{item.product?.name}</h4>
+                      <p className='text-sm text-gray-500 mt-1'>Số lượng: {item.buy_count}</p>
+                    </div>
+                    <span className='font-bold text-gray-700'>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format((item.product?.price || 0) * item.buy_count)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className='bg-gray-50 px-6 py-4 flex justify-between items-center'>
+                <span className='font-medium text-gray-500'>Tổng tiền đã đặt:</span>
+                <span className='text-xl font-black text-rose-600'>
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalHistoryValue)}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

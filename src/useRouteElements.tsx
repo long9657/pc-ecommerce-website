@@ -10,6 +10,7 @@ import Faq from './pages/Faq'
 import Profile from './pages/Profile'
 import Bills from './pages/Bills'
 import ProductDetail from './pages/ProductDetail'
+import AdminDashboard from './pages/AdminDashboard/AdminDashboard'
 
 function useRouteElements() {
   const routeElements = useRoutes([
@@ -84,6 +85,10 @@ function useRouteElements() {
           <Bills />
         </MainLayout>
       )
+    },
+    {
+      path: '/admin',
+      element: <AdminDashboard />
     }
   ])
   return routeElements

@@ -10,6 +10,7 @@ import { omit } from 'lodash'
 import { isAxiosUnprocessableEntityError } from '../../utils/utils'
 import type ResponseApi from '../../types/response.type'
 import { toast } from 'react-toastify'
+
 type FormData = Schema
 export default function Register() {
   const navigate = useNavigate()
@@ -21,53 +22,45 @@ export default function Register() {
   } = useForm<FormData>({
     resolver: yupResolver(schema)
   })
+  
   const onSubmit = handleSubmit((data) => {
-    const body = omit(data, ['confirm_password'])
+    const body = {
+      ...data,
+      date_of_birth: new Date(data.date_of_birth).toISOString()
+    }
+    
     registerAccountMutation.mutate(body, {
       onSuccess: () => {
         toast.success('Đăng ký tài khoản thành công')
         navigate('/login')
       },
       onError: (error) => {
-        console.log({ error })
-        if (isAxiosUnprocessableEntityError<ResponseApi<Omit<FormData, 'confirm_password'>>>(error)) {
-          const formError = error.response?.data.data
-          if (formError?.username) {
-            setError('username', {
-              message: formError.username,
-              type: 'Server'
+        if (isAxiosUnprocessableEntityError<any>(error)) {
+          const formError = error.response?.data?.errors
+          if (formError) {
+            Object.keys(formError).forEach((key) => {
+              setError(key as keyof FormData, {
+                message: formError[key].msg,
+                type: 'Server'
+              })
             })
           }
-          if (formError?.email) {
-            setError('email', {
-              message: formError.email,
-              type: 'Server'
-            })
-          }
-          if (formError?.password) {
-            setError('password', {
-              message: formError.password,
-              type: 'Server'
-            })
-          }
+        } else {
+          toast.error('Đăng ký thất bại, vui lòng thử lại!')
         }
       }
     })
   })
   const registerAccountMutation = useMutation({
-    mutationFn: (body: Omit<FormData, 'confirm_password'>) => RegisterAcount(body)
+    mutationFn: (body: any) => RegisterAcount(body)
   })
-  // const rules = getRules(getValues)
-  // (data) => console.log(data)
-  console.log('error', errors)
 
   return (
-    <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
+    <div className='min-h-screen bg-gray-100 flex items-center justify-center py-12'>
       <div className='bg-white rounded-lg shadow-md w-full max-w-md p-8'>
         <h2 className='text-2xl font-bold text-gray-800 mb-6'>Đăng ký</h2>
 
         <form onSubmit={onSubmit} noValidate>
-
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700 mb-1'>Họ và tên</label>
             <Input
@@ -76,17 +69,6 @@ export default function Register() {
               placeholder='Nhập họ và tên'
               register={register}
               errorMessage={errors.name?.message}
-            />
-          </div>
-
-          <div className='mb-4'>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Tên đăng nhập</label>
-            <Input
-              type='text'
-              name='username'
-              placeholder='Nhập tên đăng nhập'
-              register={register}
-              errorMessage={errors.username?.message}
             />
           </div>
 
@@ -102,24 +84,12 @@ export default function Register() {
           </div>
 
           <div className='mb-4'>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Địa chỉ</label>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>Ngày sinh</label>
             <Input
-              type='text'
-              name='address'
-              placeholder='Nhập địa chỉ'
+              type='date'
+              name='date_of_birth'
               register={register}
-              errorMessage={errors.address?.message}
-            />
-          </div>
-
-          <div className='mb-4'>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Số điện thoại</label>
-            <Input
-              type='text'
-              name='phone'
-              placeholder='Nhập số điện thoại'
-              register={register}
-              errorMessage={errors.phone?.message}
+              errorMessage={errors.date_of_birth?.message}
             />
           </div>
 
@@ -149,8 +119,15 @@ export default function Register() {
 
           <button
             type='submit'
-            className='w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition'
+            disabled={registerAccountMutation.isLoading}
+            className='w-full flex justify-center items-center gap-2 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-70 disabled:cursor-not-allowed'
           >
+            {registerAccountMutation.isLoading && (
+              <svg className='animate-spin h-5 w-5 text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+              </svg>
+            )}
             Đăng ký
           </button>
         </form>
