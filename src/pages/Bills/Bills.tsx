@@ -1,155 +1,458 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPurchases, buyPurchases, deletePurchases, updatePurchase } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
+import { Link } from 'react-router'
+
+const STATUS_LABELS: Record<number, { label: string; color: string; bg: string }> = {
+  1: { label: 'Chờ xác nhận', color: 'text-amber-500 border-amber-500/20 bg-amber-500/5', bg: 'bg-amber-500' },
+  2: { label: 'Đang xử lý', color: 'text-blue-500 border-blue-500/20 bg-blue-500/5', bg: 'bg-blue-500' },
+  3: { label: 'Đã giao', color: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5', bg: 'bg-emerald-500' },
+  4: { label: 'Đã hủy', color: 'text-rose-500 border-rose-500/20 bg-rose-500/5', bg: 'bg-rose-500' }
+}
 
 export default function Bills() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'cart' | 'history'>('cart')
+  const [historyFilter, setHistoryFilter] = useState<'all' | 1 | 2 | 3 | 4>('all')
 
-  const { data: cartData } = useQuery({
+  // Checkbox selections for cart items
+  const [selectedCartIds, setSelectedCartIds] = useState<string[]>([])
+
+  // ==========================================
+  // 1. DATA FETCHING (REACT QUERY)
+  // ==========================================
+
+  // Cart: Status 0
+  const { data: cartData, isLoading: isCartLoading } = useQuery({
     queryKey: ['purchases', 0],
     queryFn: () => getPurchases({ status: 0 })
   })
+  const cartItems = cartData?.data?.result || []
 
-  const { data: historyData } = useQuery({
+  // Waiting for Confirmation: Status 1
+  const { data: waitingData } = useQuery({
     queryKey: ['purchases', 1],
     queryFn: () => getPurchases({ status: 1 })
   })
+  const waitingItems = waitingData?.data?.result || []
 
-  const cartItems = cartData?.data?.result || []
-  const historyItems = historyData?.data?.result || []
+  // Processing: Status 2
+  const { data: processingData } = useQuery({
+    queryKey: ['purchases', 2],
+    queryFn: () => getPurchases({ status: 2 })
+  })
+  const processingItems = processingData?.data?.result || []
 
+  // Delivered: Status 3
+  const { data: deliveredData } = useQuery({
+    queryKey: ['purchases', 3],
+    queryFn: () => getPurchases({ status: 3 })
+  })
+  const deliveredItems = deliveredData?.data?.result || []
+
+  // Cancelled: Status 4
+  const { data: cancelledData } = useQuery({
+    queryKey: ['purchases', 4],
+    queryFn: () => getPurchases({ status: 4 })
+  })
+  const cancelledItems = cancelledData?.data?.result || []
+
+  // ==========================================
+  // 2. MUTATIONS
+  // ==========================================
+
+  // Update Cart Quantity
   const updatePurchaseMutation = useMutation({
-    mutationFn: (data: { id: string, buy_count: number }) => updatePurchase(data.id, { buy_count: data.buy_count }),
-    onSuccess: () => queryClient.invalidateQueries(['purchases', 0])
+    mutationFn: (data: { id: string; buy_count: number }) => updatePurchase(data.id, { buy_count: data.buy_count }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
+    },
+    onError: () => toast.error('Không thể cập nhật số lượng!')
   })
 
+  // Delete from Cart
   const deletePurchaseMutation = useMutation({
     mutationFn: (ids: string[]) => deletePurchases({ purchase_ids: ids }),
-    onSuccess: () => queryClient.invalidateQueries(['purchases', 0])
+    onSuccess: (_, ids) => {
+      toast.success('Đã xóa sản phẩm khỏi giỏ hàng!')
+      setSelectedCartIds((prev) => prev.filter((id) => !ids.includes(id)))
+      queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
+    },
+    onError: () => toast.error('Xóa thất bại!')
   })
 
+  // Checkout / Buy
   const buyPurchaseMutation = useMutation({
     mutationFn: (ids: string[]) => buyPurchases({ purchase_ids: ids }),
     onSuccess: () => {
-      toast.success('Đặt hàng thành công!')
-      queryClient.invalidateQueries(['purchases', 0])
-      queryClient.invalidateQueries(['purchases', 1])
+      toast.success('Đặt hàng thành công! Đơn hàng đang được chờ xác nhận.')
+      setSelectedCartIds([])
+      queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
+      queryClient.invalidateQueries({ queryKey: ['purchases', 1] })
       setActiveTab('history')
-    }
+      setHistoryFilter(1) // chuyển ngay sang tab Chờ xác nhận
+    },
+    onError: () => toast.error('Đặt hàng thất bại!')
   })
 
-  const totalCartValue = cartItems.reduce((acc: number, item: any) => acc + (item.product?.price || 0) * item.buy_count, 0)
-  const totalHistoryValue = historyItems.reduce((acc: number, item: any) => acc + (item.product?.price || 0) * item.buy_count, 0)
+  // ==========================================
+  // 3. COMPUTED STATES & HANDLERS
+  // ==========================================
+
+  // Select / Unselect all checkboxes
+  const handleSelectAll = () => {
+    if (selectedCartIds.length === cartItems.length) {
+      setSelectedCartIds([])
+    } else {
+      setSelectedCartIds(cartItems.map((item: any) => item._id))
+    }
+  }
+
+  const handleSelectToggle = (id: string) => {
+    setSelectedCartIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    )
+  }
+
+  // Calculate Cart Totals
+  const totalCartValue = useMemo(() => {
+    return cartItems.reduce((acc: number, item: any) => {
+      // Chỉ cộng tiền các sản phẩm được tích chọn
+      if (selectedCartIds.includes(item._id)) {
+        return acc + (item.product?.price || 0) * item.buy_count
+      }
+      return acc
+    }, 0)
+  }, [cartItems, selectedCartIds])
+
+  // Combine and sort History Items
+  const allHistoryItems = useMemo(() => {
+    const combined = [
+      ...waitingItems.map((item: any) => ({ ...item, status: 1 })),
+      ...processingItems.map((item: any) => ({ ...item, status: 2 })),
+      ...deliveredItems.map((item: any) => ({ ...item, status: 3 })),
+      ...cancelledItems.map((item: any) => ({ ...item, status: 4 }))
+    ]
+    // Sắp xếp theo ngày cập nhật mới nhất
+    return combined.sort((a: any, b: any) => new Date(b.updated_at || b.createdAt).getTime() - new Date(a.updated_at || a.createdAt).getTime())
+  }, [waitingItems, processingItems, deliveredItems, cancelledItems])
+
+  // Filtered History for Display
+  const filteredHistoryItems = useMemo(() => {
+    if (historyFilter === 'all') return allHistoryItems
+    return allHistoryItems.filter((item: any) => item.status === historyFilter)
+  }, [allHistoryItems, historyFilter])
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleString('vi-VN')
 
   return (
-    <div className='max-w-4xl mx-auto px-4 py-8 font-sans'>
-      <div className='mb-6 flex gap-4 border-b border-gray-200 pb-2'>
-        <button 
-          onClick={() => setActiveTab('cart')}
-          className={`text-lg font-bold pb-2 ${activeTab === 'cart' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
-        >
-          Giỏ hàng ({cartItems.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('history')}
-          className={`text-lg font-bold pb-2 ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
-        >
-          Đơn hàng chờ xử lý ({historyItems.length})
-        </button>
-      </div>
+    <div className='min-h-screen bg-slate-50/60 font-sans p-6'>
+      
+      {/* Navigation Breadcrumb */}
+      <nav className='max-w-4xl mx-auto flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-6 select-none'>
+        <Link to='/' className='hover:text-blue-600 transition'>Home</Link>
+        <span>/</span>
+        <span className='text-slate-900 font-black'>Hóa đơn & Giỏ hàng</span>
+      </nav>
 
-      {activeTab === 'cart' && (
-        <div className='space-y-4'>
-          {cartItems.length === 0 ? (
-            <div className='text-center py-10 text-gray-500'>Giỏ hàng của bạn đang trống.</div>
-          ) : (
-            <>
-              {cartItems.map((item: any) => (
-                <div key={item._id} className='bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex gap-4 items-center'>
-                  <img src={item.product?.image} alt={item.product?.name} className='w-20 h-20 object-contain rounded-lg bg-gray-50' />
-                  <div className='flex-1'>
-                    <h4 className='font-semibold text-gray-800 line-clamp-2'>{item.product?.name}</h4>
-                    <span className='font-bold text-rose-600 mt-2 block'>
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.product?.price || 0)}
+      {/* Main Container */}
+      <div className='max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden'>
+        
+        {/* Navigation big Tabs */}
+        <div className='flex border-b border-slate-100 bg-slate-50/80 p-2 gap-2 select-none'>
+          <button
+            onClick={() => setActiveTab('cart')}
+            className={`flex-1 py-4.5 rounded-2xl text-xs uppercase font-extrabold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'cart'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-white/40'
+            }`}
+          >
+            🛒 Giỏ hàng của tôi
+            {cartItems.length > 0 && (
+              <span className='bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full'>
+                {cartItems.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-4.5 rounded-2xl text-xs uppercase font-extrabold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'history'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-white/40'
+            }`}
+          >
+            📋 Lịch sử đơn mua
+            {allHistoryItems.length > 0 && (
+              <span className='bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full'>
+                {allHistoryItems.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className='p-6 md:p-8'>
+          {/* ==========================================
+              TAB 1: CART (GIO HANG)
+              ========================================== */}
+          {activeTab === 'cart' && (
+            <div className='space-y-6'>
+              
+              {/* Select All & Delete Group */}
+              {cartItems.length > 0 && (
+                <div className='flex items-center justify-between border-b border-slate-100 pb-4 select-none'>
+                  <label className='flex items-center gap-2.5 text-xs font-bold text-slate-600 cursor-pointer'>
+                    <input
+                      type='checkbox'
+                      checked={selectedCartIds.length === cartItems.length && cartItems.length > 0}
+                      onChange={handleSelectAll}
+                      className='w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer'
+                    />
+                    Chọn tất cả ({cartItems.length} sản phẩm)
+                  </label>
+
+                  {selectedCartIds.length > 0 && (
+                    <button
+                      onClick={() => deletePurchaseMutation.mutate(selectedCartIds)}
+                      className='text-xs font-bold text-rose-500 hover:text-rose-600 cursor-pointer transition hover:underline'
+                    >
+                      🗑️ Xóa mục đã chọn ({selectedCartIds.length})
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Cart List */}
+              <div className='space-y-4'>
+                {cartItems.map((item: any) => {
+                  const isChecked = selectedCartIds.includes(item._id)
+                  const isMutating = updatePurchaseMutation.isLoading && updatePurchaseMutation.variables?.id === item._id
+
+                  return (
+                    <div
+                      key={item._id}
+                      className={`rounded-2xl border p-4.5 flex items-center gap-4 transition-all duration-300 ${
+                        isChecked
+                          ? 'border-blue-500/30 bg-blue-50/5 shadow-sm'
+                          : 'border-slate-250/60 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      {/* Checkbox select */}
+                      <input
+                        type='checkbox'
+                        checked={isChecked}
+                        onChange={() => handleSelectToggle(item._id)}
+                        className='w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer flex-shrink-0'
+                      />
+
+                      {/* Product image */}
+                      <img
+                        src={item.product?.image}
+                        alt={item.product?.name}
+                        className='w-16 h-16 object-contain rounded-xl bg-slate-50 border border-slate-100 p-1 flex-shrink-0'
+                      />
+
+                      {/* Info & Title */}
+                      <div className='flex-1 min-w-0'>
+                        <h4 className='font-bold text-slate-800 line-clamp-1 text-sm' title={item.product?.name}>
+                          {item.product?.name}
+                        </h4>
+                        <span className='font-black text-rose-600 mt-2 block text-sm'>
+                          {formatPrice(item.product?.price)}
+                        </span>
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className='flex items-center gap-2 border border-slate-200 rounded-xl p-1 bg-slate-50 select-none relative'>
+                        <button
+                          disabled={item.buy_count <= 1 || isMutating}
+                          onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count - 1 })}
+                          className='w-7 h-7 bg-white hover:bg-slate-100 rounded-lg flex items-center justify-center font-black text-slate-600 disabled:opacity-50 transition border border-slate-150 cursor-pointer'
+                        >
+                          -
+                        </button>
+                        
+                        <span className='w-8 text-center text-xs font-extrabold text-slate-700 min-w-[20px]'>
+                          {item.buy_count}
+                        </span>
+
+                        <button
+                          disabled={isMutating}
+                          onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count + 1 })}
+                          className='w-7 h-7 bg-white hover:bg-slate-100 rounded-lg flex items-center justify-center font-black text-slate-600 disabled:opacity-50 transition border border-slate-150 cursor-pointer'
+                        >
+                          +
+                        </button>
+
+                        {isMutating && (
+                          <div className='absolute inset-0 bg-slate-100/50 flex items-center justify-center rounded-xl'>
+                            <div className='w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin' />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Individual Delete Button */}
+                      <button
+                        onClick={() => deletePurchaseMutation.mutate([item._id])}
+                        className='text-[10px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-wider cursor-pointer transition p-2'
+                        title='Xóa khỏi giỏ hàng'
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  );
+                })}
+
+                {/* Empty Cart */}
+                {cartItems.length === 0 && !isCartLoading && (
+                  <div className='text-center py-16 select-none'>
+                    <div className='w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner mb-4'>
+                      🛒
+                    </div>
+                    <h3 className='text-xs font-extrabold uppercase text-slate-600 tracking-wider'>Giỏ hàng trống</h3>
+                    <p className='text-slate-400 font-medium text-xs max-w-sm mx-auto mt-2 leading-relaxed'>
+                      Giỏ hàng của bạn đang trống. Hãy quay lại trang sản phẩm để chọn mua món đồ bạn yêu thích nhé!
+                    </p>
+                    <Link
+                      to='/products'
+                      className='mt-6 inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-md'
+                    >
+                      Tiếp tục mua sắm
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Checkout Bar (Shopee style) */}
+              {cartItems.length > 0 && (
+                <div className='bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 shadow-sm select-none'>
+                  <div>
+                    <span className='text-slate-500 block text-xs font-semibold'>Tổng thanh toán ({selectedCartIds.length} sản phẩm):</span>
+                    <span className='text-2xl font-black text-rose-600 block mt-1'>
+                      {formatPrice(totalCartValue)}
                     </span>
                   </div>
-                  <div className='flex items-center gap-2 border border-gray-200 rounded-lg p-1'>
-                    <button 
-                      onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: Math.max(1, item.buy_count - 1) })}
-                      className='w-6 h-6 bg-gray-100 rounded flex items-center justify-center font-bold text-gray-600'
-                    >
-                      -
-                    </button>
-                    <span className='w-8 text-center text-sm font-semibold'>{item.buy_count}</span>
-                    <button 
-                      onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count + 1 })}
-                      className='w-6 h-6 bg-gray-100 rounded flex items-center justify-center font-bold text-gray-600'
-                    >
-                      +
-                    </button>
-                  </div>
-                  <button 
-                    onClick={() => deletePurchaseMutation.mutate([item._id])}
-                    className='text-red-500 font-semibold text-xs ml-4'
+                  <button
+                    disabled={selectedCartIds.length === 0 || buyPurchaseMutation.isLoading}
+                    onClick={() => buyPurchaseMutation.mutate(selectedCartIds)}
+                    className='w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider py-4 px-10 rounded-xl shadow-lg shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition duration-300'
                   >
-                    Xóa
+                    {buyPurchaseMutation.isLoading ? 'ĐANG ĐẶT HÀNG...' : 'THANH TOÁN NGAY'}
                   </button>
                 </div>
-              ))}
-              <div className='bg-gray-50 p-6 rounded-xl border border-gray-200 mt-6 flex justify-between items-center'>
-                <div>
-                  <span className='text-gray-500 block text-sm font-semibold'>Tổng tiền thanh toán:</span>
-                  <span className='text-2xl font-black text-rose-600'>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalCartValue)}
-                  </span>
-                </div>
-                <button 
-                  onClick={() => buyPurchaseMutation.mutate(cartItems.map((i: any) => i._id))}
-                  className='bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition'
-                >
-                  THANH TOÁN NGAY
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+              )}
 
-      {activeTab === 'history' && (
-        <div className='space-y-4'>
-          {historyItems.length === 0 ? (
-            <div className='text-center py-10 text-gray-500'>Bạn chưa có đơn hàng nào đang chờ.</div>
-          ) : (
-            <div className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
-              <div className='bg-blue-50 px-6 py-4 border-b border-blue-100'>
-                <h3 className='font-bold text-blue-700'>Trạng thái: Đang chờ Chủ Shop xác nhận</h3>
+            </div>
+          )}
+
+          {/* ==========================================
+              TAB 2: HISTORY (DON HANG DA DAT)
+              ========================================== */}
+          {activeTab === 'history' && (
+            <div className='space-y-6'>
+              
+              {/* Horizontal scroll status filter tabs */}
+              <div className='flex gap-1 overflow-x-auto border-b border-slate-100 pb-2 select-none max-w-full scrollbar-none'>
+                {[
+                  { key: 'all', label: 'Tất cả đơn' },
+                  { key: 1, label: '⏳ Chờ xác nhận' },
+                  { key: 2, label: '📦 Đang xử lý' },
+                  { key: 3, label: '🚚 Đã giao' },
+                  { key: 4, label: '❌ Đã hủy' }
+                ].map((tab) => {
+                  const isSelected = historyFilter === tab.key
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setHistoryFilter(tab.key as any)}
+                      className={`whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex-shrink-0 ${
+                        isSelected
+                          ? 'bg-blue-50 text-blue-600 font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  )
+                })}
               </div>
-              <div className='px-6 py-4 divide-y divide-gray-100'>
-                {historyItems.map((item: any) => (
-                  <div key={item._id} className='py-4 flex justify-between items-center gap-4'>
-                    <img src={item.product?.image} className='w-16 h-16 object-contain rounded-lg bg-gray-50' />
-                    <div className='flex-1'>
-                      <h4 className='font-semibold text-gray-800 line-clamp-1'>{item.product?.name}</h4>
-                      <p className='text-sm text-gray-500 mt-1'>Số lượng: {item.buy_count}</p>
+
+              {/* History list */}
+              <div className='space-y-4'>
+                {filteredHistoryItems.map((item: any) => {
+                  const info = STATUS_LABELS[item.status]
+                  return (
+                    <div
+                      key={item._id}
+                      className='bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between p-4.5 gap-4 relative group'
+                    >
+                      {/* Product image & Info */}
+                      <div className='flex gap-4 items-start flex-1 min-w-0'>
+                        <img
+                          src={item.product?.image}
+                          alt={item.product?.name}
+                          className='w-14 h-14 object-contain rounded-xl bg-slate-50 border border-slate-100 p-1 flex-shrink-0'
+                        />
+                        <div className='min-w-0 flex-1'>
+                          <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide mb-2 ${info?.color}`}>
+                            <span className={`w-1 h-1 rounded-full ${info?.bg}`} />
+                            {info?.label}
+                          </span>
+                          
+                          <h4 className='font-bold text-slate-800 line-clamp-1 text-sm'>
+                            {item.product?.name}
+                          </h4>
+                          
+                          <p className='text-[10px] text-slate-400 font-medium mt-1.5'>
+                            Đặt ngày: {formatDate(item.updated_at || item.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quantity & Pricing */}
+                      <div className='flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-slate-100 pt-3.5 md:pt-0'>
+                        <div className='text-left md:text-right min-w-[70px]'>
+                          <span className='text-[9px] text-slate-400 font-bold uppercase tracking-wider block'>Số lượng</span>
+                          <span className='text-xs font-extrabold text-slate-700 block mt-0.5'>x{item.buy_count}</span>
+                        </div>
+
+                        <div className='text-right min-w-[120px]'>
+                          <span className='text-[9px] text-slate-400 font-bold uppercase tracking-wider block'>Tổng thanh toán</span>
+                          <span className='text-sm font-black text-rose-600 block mt-0.5'>
+                            {formatPrice(item.product?.price * item.buy_count)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className='font-bold text-gray-700'>
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format((item.product?.price || 0) * item.buy_count)}
-                    </span>
+                  )
+                })}
+
+                {/* Empty History */}
+                {filteredHistoryItems.length === 0 && (
+                  <div className='text-center py-16 select-none'>
+                    <div className='w-16 h-16 bg-slate-50 text-slate-450 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner mb-4'>
+                      📋
+                    </div>
+                    <h3 className='text-xs font-extrabold uppercase text-slate-500 tracking-wider'>Không có đơn mua</h3>
+                    <p className='text-slate-400 font-medium text-xs max-w-sm mx-auto mt-2 leading-relaxed'>
+                      Bạn không có đơn hàng nào ở trạng thái này.
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
-              <div className='bg-gray-50 px-6 py-4 flex justify-between items-center'>
-                <span className='font-medium text-gray-500'>Tổng tiền đã đặt:</span>
-                <span className='text-xl font-black text-rose-600'>
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalHistoryValue)}
-                </span>
-              </div>
+
             </div>
           )}
         </div>
-      )}
+
+      </div>
     </div>
   )
 }

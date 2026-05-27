@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react'
 import {toast} from 'react-toastify'
+import { getMe, updateMe } from '../../api/auth.api'
 
 interface UserProfile {
     name: string
@@ -17,21 +18,39 @@ export default function Profile() {
     })
 
     useEffect(() => {
-        const profileStr = localStorage.getItem('profile')
-        if (profileStr) {
-            try {
-                const data = JSON.parse(profileStr)
-                setProfile({
-                    name: data.name || '',
-                    email: data.email || '',
-                    phone: data.phone || '0123456789',
-                    address: data.address || 'Km 10 Nguyễn Trãi, Hà Đông, Hà Nội'
-                })
-            }
-            catch (e) {
-                console.log(e);
-            }
-        }
+        getMe()
+            .then((res: any) => {
+                const data = res.data.result
+                if (data) {
+                    const newProfile = {
+                        name: data.name || '',
+                        email: data.email || '',
+                        phone: data.phone || '0123456789',
+                        address: data.address || 'Km 10 Nguyễn Trãi, Hà Đông, Hà Nội'
+                    }
+                    setProfile(newProfile)
+                    localStorage.setItem('profile', JSON.stringify(newProfile))
+                    window.dispatchEvent(new Event('storage'))
+                }
+            })
+            .catch((err) => {
+                console.error('Lỗi lấy thông tin cá nhân:', err)
+                // Fallback to localStorage if API fails
+                const profileStr = localStorage.getItem('profile')
+                if (profileStr) {
+                    try {
+                        const data = JSON.parse(profileStr)
+                        setProfile({
+                            name: data.name || '',
+                            email: data.email || '',
+                            phone: data.phone || '0123456789',
+                            address: data.address || 'Viet Nam'
+                        })
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
+            })
     },[])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -40,9 +59,30 @@ export default function Profile() {
     }
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault()
-        localStorage.setItem('profile', JSON.stringify(profile))
-        toast.success('Cap nhat thong tin thanh cong')
-        window.dispatchEvent(new Event('storage'))
+        updateMe({
+            name: profile.name,
+            phone: profile.phone,
+            address: profile.address
+        })
+        .then((res: any) => {
+            const data = res.data.result
+            if (data) {
+                const updatedProfile = {
+                    name: data.name || '',
+                    email: data.email || '',
+                    phone: data.phone || '0123456789',
+                    address: data.address || 'Viet Nam'
+                }
+                setProfile(updatedProfile)
+                localStorage.setItem('profile', JSON.stringify(updatedProfile))
+                window.dispatchEvent(new Event('storage'))
+                toast.success('Cập nhật thông tin thành công')
+            }
+        })
+        .catch((err) => {
+            console.error('Lỗi khi cập nhật profile:', err)
+            toast.error('Cập nhật thông tin thất bại!')
+        })
     }
     return (
     <div className='max-w-4xl mx-auto px-4 py-8 font-sans'>

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
@@ -19,7 +18,7 @@ const MOCK_HERO_SLIDES = [
 
 export default function ProductList() {
   const navigate = useNavigate()
-  const [currentHeroSlide, setCurrentHeroSlide] = useState(0)
+  const currentHeroSlide = 0
 
   const { data: productsData } = useQuery({
     queryKey: ['products'],

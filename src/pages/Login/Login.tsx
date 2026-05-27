@@ -29,7 +29,7 @@ export default function Login() {
   const onSubmit = handleSubmit((data) => {
     const body = data
     LoginAccountMutation.mutate(body, {
-      onSuccess: (res: any) => {
+      onSuccess: () => {
         toast.success('Đăng nhập thành công')
         navigate('/')
       },
