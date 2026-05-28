@@ -18,6 +18,7 @@ export default function Bills() {
 
   // Checkbox selections for cart items
   const [selectedCartIds, setSelectedCartIds] = useState<string[]>([])
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false)
 
   // ==========================================
   // 1. DATA FETCHING (REACT QUERY)
@@ -341,7 +342,7 @@ export default function Bills() {
                   </div>
                   <button
                     disabled={selectedCartIds.length === 0 || buyPurchaseMutation.isLoading}
-                    onClick={() => buyPurchaseMutation.mutate(selectedCartIds)}
+                    onClick={() => setIsQrModalOpen(true)}
                     className='w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider py-4 px-10 rounded-xl shadow-lg shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition duration-300'
                   >
                     {buyPurchaseMutation.isLoading ? 'ĐANG ĐẶT HÀNG...' : 'THANH TOÁN NGAY'}
@@ -453,6 +454,66 @@ export default function Bills() {
         </div>
 
       </div>
+
+      {/* ==========================================
+          MODAL: QR PAYMENT DEMO
+          ========================================== */}
+      {isQrModalOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in'>
+          <div className='bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-scale-up border border-slate-100 p-6 text-center font-sans'>
+            <div className='w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner text-xl'>
+              🔒
+            </div>
+            <h3 className='text-slate-800 font-black text-base uppercase tracking-tight mb-1'>Thanh toán đơn hàng</h3>
+            <p className='text-xs text-slate-400 font-medium mb-4'>Quét mã VietQR dưới đây để thanh toán</p>
+            
+            {/* QR Code Dynamic image */}
+            <div className='bg-slate-50 border border-slate-100 rounded-2xl p-4 max-w-[200px] mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-inner'>
+              <img
+                src={`https://img.vietqr.io/image/MB-0987654321-compact.png?amount=${totalCartValue}&addInfo=PCSTORE%2520THANH%2520TOAN`}
+                alt='VietQR Payment'
+                className='max-h-full max-w-full object-contain rounded-lg'
+              />
+            </div>
+
+            {/* Price & Info */}
+            <div className='space-y-1 mb-6'>
+              <span className='text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block'>Số tiền cần trả</span>
+              <span className='text-xl font-black text-rose-500 block'>{formatPrice(totalCartValue)}</span>
+              <span className='text-[10px] text-slate-400 font-bold block mt-1.5 bg-slate-100 py-1 px-3 rounded-full inline-block'>
+                Nội dung: PCSTORE THANH TOAN
+              </span>
+            </div>
+
+            {/* Info notice */}
+            <p className='text-[10px] text-slate-400 font-semibold leading-relaxed mb-6 bg-amber-50 text-amber-600 border border-amber-200/50 rounded-xl p-3.5'>
+              ⚠️ Sau khi quét mã và chuyển khoản thành công trên ứng dụng ngân hàng, bạn vui lòng nhấn "Tôi đã chuyển khoản" để hệ thống ghi nhận đơn hàng.
+            </p>
+
+            {/* Modal Footer */}
+            <div className='flex gap-2'>
+              <button
+                type='button'
+                onClick={() => setIsQrModalOpen(false)}
+                className='flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer'
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type='button'
+                disabled={buyPurchaseMutation.isLoading}
+                onClick={() => {
+                  setIsQrModalOpen(false)
+                  buyPurchaseMutation.mutate(selectedCartIds)
+                }}
+                className='flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 cursor-pointer transition'
+              >
+                {buyPurchaseMutation.isLoading ? 'Đang đặt...' : 'Tôi đã chuyển'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

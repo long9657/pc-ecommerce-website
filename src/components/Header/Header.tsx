@@ -6,12 +6,14 @@ import { useQuery } from '@tanstack/react-query'
 import { getPurchases } from '../../api/purchase.api'
 import { getCategories } from '../../api/category.api'
 import { generateNameId } from '../../utils/utils'
+import http from '../../utils/http'
 
 
 function Header() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
   const [username, setUsername] = useState<string>('')
   const [searchValue, setSearchValue] = useState('')
 
@@ -24,18 +26,45 @@ function Header() {
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     setIsAuthenticated(!!token)
+    
     if (token) {
-      const profileStr = localStorage.getItem('profile')
-      if (profileStr) {
-        try {
-          const profile = JSON.parse(profileStr)
-          setUsername(profile.name || profile.username || 'User')
-        } catch (e) {
-          setUsername('User')
-        }
-      } else {
-        setUsername('User')
-      }
+      // Tự động gọi API lấy profile mới nhất từ DB
+      http.get('/users/me')
+        .then((response) => {
+          const user = response.data.result
+          localStorage.setItem('profile', JSON.stringify(user))
+          setUsername(user.name || user.username || 'User')
+          setIsAdmin(user.roles?.includes(0) || user.roles?.includes('Admin'))
+        })
+        .catch(() => {
+          // Nếu token đã bị xóa khỏi LS (do interceptor clear khi lỗi 401)
+          const checkToken = localStorage.getItem('access_token')
+          if (!checkToken) {
+            setIsAuthenticated(false)
+            setUsername('')
+            setIsAdmin(false)
+            return
+          }
+
+          // Fallback nếu API có lỗi
+          const profileStr = localStorage.getItem('profile')
+          if (profileStr) {
+            try {
+              const profile = JSON.parse(profileStr)
+              setUsername(profile.name || profile.username || 'User')
+              setIsAdmin(profile.roles?.includes(0) || profile.roles?.includes('Admin'))
+            } catch (e) {
+              setUsername('User')
+              setIsAdmin(false)
+            }
+          } else {
+            setUsername('User')
+            setIsAdmin(false)
+          }
+        })
+    } else {
+      setIsAdmin(false)
+      setUsername('')
     }
   }, [location.pathname])
 
@@ -132,6 +161,14 @@ function Header() {
             <Popover
               renderPopover={
                 <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-40 overflow-hidden font-sans'>
+                  {isAdmin && (
+                    <Link
+                      to='/admin'
+                      className='block w-full bg-blue-50 py-2.5 px-4 text-left text-sm text-blue-600 hover:bg-blue-100 transition font-bold border-b border-gray-100'
+                    >
+                      🛡️ Admin Panel
+                    </Link>
+                  )}
                   <Link
                     to='/profile'
                     className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 hover:bg-slate-50 hover:text-blue-600 transition'

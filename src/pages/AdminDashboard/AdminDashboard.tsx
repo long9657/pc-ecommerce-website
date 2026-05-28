@@ -235,7 +235,7 @@ export default function AdminDashboard() {
           'Content-Type': 'multipart/form-data'
         }
       })
-      const imageUrl = response.data.result
+      const imageUrl = response.data.result[0].url
       setProductForm((prev) => ({ ...prev, image: imageUrl }))
       toast.success('Upload ảnh thành công!')
     } catch (error) {
