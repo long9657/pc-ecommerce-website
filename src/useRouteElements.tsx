@@ -10,7 +10,12 @@ import Faq from './pages/Faq'
 import Profile from './pages/Profile'
 import Bills from './pages/Bills'
 import ProductDetail from './pages/ProductDetail'
-import AdminDashboard from './pages/AdminDashboard/AdminDashboard'
+import Orders from './pages/Orders/Orders'
+import AdminLayout from './layouts/AdminLayout/AdminLayout'
+import Dashboard from './pages/Admin/Dashboard/Dashboard'
+import OrdersAdmin from './pages/Admin/Orders/OrdersAdmin'
+import ProductsAdmin from './pages/Admin/Products/ProductsAdmin'
+import UsersAdmin from './pages/Admin/Users/UsersAdmin'
 
 function useRouteElements() {
   const routeElements = useRoutes([
@@ -31,7 +36,7 @@ function useRouteElements() {
       )
     },
     {
-      path: '/product/:id',
+      path: '/:categorySlug/:productSlug',
       element: (
         <MainLayout>
           <ProductDetail/>
@@ -79,6 +84,14 @@ function useRouteElements() {
       )
     },
     {
+      path: '/profile/orders',
+      element: (
+        <MainLayout>
+          <Orders />
+        </MainLayout>
+      )
+    },
+    {
       path: '/bills',
       element: (
         <MainLayout>
@@ -88,7 +101,33 @@ function useRouteElements() {
     },
     {
       path: '/admin',
-      element: <AdminDashboard />
+      element: <AdminLayout />,
+      children: [
+        {
+          index: true,
+          element: <Dashboard />
+        },
+        {
+          path: 'orders',
+          element: <OrdersAdmin />
+        },
+        {
+          path: 'products',
+          element: <ProductsAdmin />
+        },
+        {
+          path: 'users',
+          element: <UsersAdmin />
+        }
+      ]
+    },
+    {
+      path: '/:categorySlug',
+      element: (
+        <MainLayout>
+          <Products />
+        </MainLayout>
+      )
     }
   ])
   return routeElements

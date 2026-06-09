@@ -69,7 +69,7 @@ export default function Footer() {
                 'Motherboards'
               ].map((item) => (
                 <li key={item}>
-                  <Link to='/' className='hover:text-white transition-colors'>
+                  <Link to={`/products?search=${encodeURIComponent(item)}`} className='hover:text-white transition-colors'>
                     {item}
                   </Link>
                 </li>
@@ -82,7 +82,7 @@ export default function Footer() {
             <ul className='space-y-2 text-sm'>
               {['Custom PCs', 'Servers', 'MSI All-In-One PCs', 'HP/Compaq PCs', 'ASUS PCs', 'Tecs PCs'].map((item) => (
                 <li key={item}>
-                  <Link to='/' className='hover:text-white transition-colors'>
+                  <Link to={`/products?search=${encodeURIComponent(item)}`} className='hover:text-white transition-colors'>
                     {item}
                   </Link>
                 </li>
@@ -102,7 +102,7 @@ export default function Footer() {
                 'Infinity Gaming Notebooks'
               ].map((item) => (
                 <li key={item}>
-                  <Link to='/' className='hover:text-white transition-colors'>
+                  <Link to={`/products?search=${encodeURIComponent(item)}`} className='hover:text-white transition-colors'>
                     {item}
                   </Link>
                 </li>

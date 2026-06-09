@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
 import { getCategories } from '../../api/category.api'
-import { generateNameId } from '../../utils/utils'
 
 const MOCK_HERO_SLIDES = [
   {
@@ -94,7 +93,7 @@ export default function ProductList() {
             return (
               <div
                 key={idx}
-                onClick={() => navigate(`/products?category=${cat._id}`)}
+                onClick={() => navigate(`/${cat.slug}`)}
                 className={`border rounded-2xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-md bg-white border-slate-200/60 text-slate-800`}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto shadow-md overflow-hidden bg-white`}>
@@ -120,7 +119,7 @@ export default function ProductList() {
                 {products.map((product: any) => (
                     <Link 
                       key={product._id} 
-                      to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                      to={`/${categories.find((c: any) => c._id === product.category_id)?.slug || 'products'}/${product.slug}`}
                       className='bg-white rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-100/80 group block text-inherit no-underline'
                     >
                       <div>

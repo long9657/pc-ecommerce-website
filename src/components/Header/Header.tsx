@@ -1,4 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router'
+import { generateNameId } from '../../utils/utils'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import Popover from '../Popover'
@@ -34,6 +35,16 @@ function Header() {
       } else {
         setUsername('User')
       }
+    }
+
+    const handleClearLS = () => {
+      setIsAuthenticated(false)
+      setUsername('')
+    }
+    window.addEventListener('clearLS', handleClearLS)
+    
+    return () => {
+      window.removeEventListener('clearLS', handleClearLS)
     }
   }, [location.pathname])
 
@@ -87,7 +98,7 @@ function Header() {
 
           <nav className='hidden lg:flex items-center gap-6 text-sm font-medium text-gray-700 font-sans select-none'>
             {categories.slice(0, 4).map((cat: any) => (
-              <Link key={cat._id} to={`/products?category=${cat._id}`} className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
+              <Link key={cat._id} to={`/${cat.slug}`} className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
                 {cat.name}
               </Link>
             ))}
@@ -136,10 +147,10 @@ function Header() {
                     My Account
                   </Link>
                   <Link
-                    to='/bills'
+                    to='/profile/orders'
                     className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 hover:bg-slate-50 hover:text-blue-600 transition'
                   >
-                    My Bills
+                    My Orders
                   </Link>
                   <button
                     className='block w-full bg-white py-2.5 px-4 text-left text-sm text-red-600 border-t border-gray-100 hover:bg-red-50 transition cursor-pointer font-medium'
@@ -169,13 +180,13 @@ function Header() {
                     className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 hover:bg-slate-50 hover:text-blue-600 transition cursor-pointer font-medium'
                     onClick={() => navigate('/login')}
                   >
-                    Login
+                    Đăng nhập
                   </button>
                   <button
                     className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 border-t border-gray-100 hover:bg-slate-50 hover:text-blue-600 transition cursor-pointer font-medium'
                     onClick={() => navigate('/register')}
                   >
-                    Sign In
+                    Đăng ký
                   </button>
                 </div>
               }

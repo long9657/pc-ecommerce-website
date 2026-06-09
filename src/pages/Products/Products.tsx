@@ -1,19 +1,21 @@
 import { useState, useMemo } from 'react'
-import { useSearchParams, Link } from 'react-router'
+import { useSearchParams, Link, useParams, useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
 import { getCategories } from '../../api/category.api'
 import { addToCart } from '../../api/purchase.api'
-import { generateNameId } from '../../utils/utils'
 import { toast } from 'react-toastify'
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { categorySlug } = useParams()
+  const navigate = useNavigate()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const queryClient = useQueryClient()
 
   // 1. Get filters from URL Search Params
-  const categoryFilter = searchParams.get('category') || 'All'
+  const categoryFilterRaw = searchParams.get('category')
+  const categoryFilter = categorySlug || categoryFilterRaw || 'All'
   const minPrice = searchParams.get('minPrice') || ''
   const maxPrice = searchParams.get('maxPrice') || ''
   const sortBy = searchParams.get('sort') || 'newest'
@@ -46,6 +48,18 @@ export default function Products() {
 
   // Update a single filter helper
   const updateFilter = (key: string, value: string) => {
+    if (key === 'category') {
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('category')
+      newParams.set('page', '1')
+      if (value === 'All') {
+        navigate({ pathname: '/products', search: newParams.toString() })
+      } else {
+        navigate({ pathname: `/${value}`, search: newParams.toString() })
+      }
+      return
+    }
+
     const newParams = new URLSearchParams(searchParams)
     if (value === 'All' || !value) {
       newParams.delete(key)
@@ -59,8 +73,12 @@ export default function Products() {
   }
 
   const clearAllFilters = () => {
-    setSearchParams(new URLSearchParams())
     setPriceInput({ min: '', max: '' })
+    if (categorySlug || searchParams.get('category')) {
+      navigate('/products')
+    } else {
+      setSearchParams(new URLSearchParams())
+    }
   }
 
   // Fetch Categories
@@ -73,7 +91,7 @@ export default function Products() {
   // Find Category Name for Display
   const currentCategoryName = useMemo(() => {
     if (categoryFilter === 'All') return 'Full Hardware Store'
-    const cat = categories.find((c: any) => c._id === categoryFilter)
+    const cat = categories.find((c: any) => c.slug === categoryFilter || c._id === categoryFilter)
     return cat ? cat.name : categoryFilter
   }, [categoryFilter, categories])
 
@@ -205,17 +223,20 @@ export default function Products() {
                 >
                   <span>All Categories</span>
                 </button>
-                {categories.map((cat: any) => (
-                  <button
-                    key={cat._id}
-                    onClick={() => updateFilter('category', cat._id)}
-                    className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${
-                      categoryFilter === cat._id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{cat.name}</span>
-                  </button>
-                ))}
+                {categories.map((cat: any) => {
+                  const isActive = categoryFilter === cat.slug || categoryFilter === cat._id
+                  return (
+                    <button
+                      key={cat._id}
+                      onClick={() => updateFilter('category', cat.slug)}
+                      className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${
+                        isActive ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -334,7 +355,7 @@ export default function Products() {
               {products.map((product: any) => {
                 const inStock = product.quantity > 0
                 return (
-                <Link to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                <Link to={`/${categorySlug || categories.find((c: any) => c._id === product.category_id)?.slug || 'products'}/${product.slug}`}
                   key={product._id}
                   className='bg-white rounded-2xl p-5 flex flex-col justify-between border border-slate-200/60 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden'
                 >
@@ -415,7 +436,7 @@ export default function Products() {
                 return (
                 <Link
                     key={product._id}
-                    to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                    to={`/${categorySlug || categories.find((c: any) => c._id === product.category_id)?.slug || 'products'}/${product.slug}`}
                     className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center gap-6 group relative overflow-hidden text-inherit no-underline block'
                   >
 

@@ -6,18 +6,17 @@ import { toast } from 'react-toastify'
 import { getIdFromNameId } from '../../utils/utils'
 
 export default function ProductDetail() {
-    const { id: nameId } = useParams()
+    const { categorySlug, productSlug } = useParams()
     const navigate = useNavigate()
-    const id = getIdFromNameId(nameId as string)
 
     const { data, isLoading } = useQuery({
-      queryKey: ['product', id],
-      queryFn: () => getProductDetail(id as string)
+      queryKey: ['product', productSlug],
+      queryFn: () => getProductDetail(productSlug as string)
     })
 
     const queryClient = useQueryClient()
     const addToCartMutation = useMutation({
-      mutationFn: () => addToCart({ product_id: id as string, buy_count: 1 }),
+      mutationFn: () => addToCart({ product_id: product?._id as string, buy_count: 1 }),
       onSuccess: () => {
         toast.success('Đã thêm sản phẩm vào giỏ hàng!')
         queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
@@ -57,7 +56,7 @@ export default function ProductDetail() {
         <nav className='flex items-center gap-2 text-xs font-semibold text-slate-400 mb-8'>
             <Link to='/' className='hover:text-slate-800 transition'>Home</Link>
             <span>/</span>
-            <Link to='/products' className='hover:text-slate-800 transition'>Products</Link>
+            <Link to={`/${categorySlug}`} className='hover:text-slate-800 transition capitalize'>{categorySlug?.replace(/-/g, ' ')}</Link>
             <span>/</span>
             <span className='text-slate-600 truncate max-w-[200px] sm:max-w-none'>{product.name}</span>
         </nav>
