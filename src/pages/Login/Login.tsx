@@ -14,6 +14,7 @@ type LoginFormData = LoginSchema
 export default function Login() {
   const navigate = useNavigate()
   const {
+    setError,
     register,
     formState: { errors },
     handleSubmit,
@@ -29,7 +30,7 @@ export default function Login() {
   const onSubmit = handleSubmit((data) => {
     const body = data
     LoginAccountMutation.mutate(body, {
-      onSuccess: (res: any) => {
+      onSuccess: () => {
         toast.success('Đăng nhập thành công')
         navigate('/')
       },
