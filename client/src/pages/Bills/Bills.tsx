@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPurchases, buyPurchases, deletePurchases, updatePurchase } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 
 const STATUS_LABELS: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: 'Chờ xác nhận', color: 'text-amber-500 border-amber-500/20 bg-amber-500/5', bg: 'bg-amber-500' },
@@ -13,7 +13,6 @@ const STATUS_LABELS: Record<number, { label: string; color: string; bg: string }
 
 export default function Bills() {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
   
   const [activeTab, setActiveTab] = useState<'cart' | 'history'>('cart')
   const [historyFilter, setHistoryFilter] = useState<'all' | 1 | 2 | 3 | 4>('all')

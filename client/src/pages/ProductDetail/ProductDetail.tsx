@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProductDetail } from '../../api/product.api'
 import { addToCart } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
-import { getIdFromNameId } from '../../utils/utils'
 
 export default function ProductDetail() {
     const { categorySlug, productSlug } = useParams()
