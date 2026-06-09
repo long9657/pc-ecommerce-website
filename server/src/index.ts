@@ -27,8 +27,9 @@ app.use('/uploads', express.static(UPLOAD_DIR))
 
 app.use(defaultErrorHandler)
 
-app.listen(3000, () => {
-  console.log('dang nghe')
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
+  console.log(`dang nghe tren port ${PORT}`)
 })
 
 database.connect()

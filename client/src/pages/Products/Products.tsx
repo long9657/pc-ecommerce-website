@@ -16,7 +16,7 @@ export default function Products() {
   const queryClient = useQueryClient()
 
   // 1. Get filters from URL Search Params
-  const categoryFilter = searchParams.get('category') || 'All'
+  const categoryFilter = searchParams.get('category') || categorySlug || 'All'
   const categoryId = categoryFilter !== 'All' ? getIdFromNameId(categoryFilter) : 'All'
   const minPrice = searchParams.get('minPrice') || ''
   const maxPrice = searchParams.get('maxPrice') || ''
@@ -52,13 +52,13 @@ export default function Products() {
   const updateFilter = (key: string, value: string) => {
     if (key === 'category') {
       const newParams = new URLSearchParams(searchParams)
-      newParams.delete('category')
       newParams.set('page', '1')
       if (value === 'All') {
-        navigate({ pathname: '/products', search: newParams.toString() })
+        newParams.delete('category')
       } else {
-        navigate({ pathname: `/${value}`, search: newParams.toString() })
+        newParams.set('category', value)
       }
+      navigate({ pathname: '/products', search: newParams.toString() })
       return
     }
 

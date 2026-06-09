@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
 import { getCategories } from '../../api/category.api'
+import { generateNameId } from '../../utils/utils'
 
 const MOCK_HERO_SLIDES = [
   {

@@ -6,7 +6,6 @@ import Popover from '../Popover'
 import { useQuery } from '@tanstack/react-query'
 import { getPurchases } from '../../api/purchase.api'
 import { getCategories } from '../../api/category.api'
-import { generateNameId } from '../../utils/utils'
 import http from '../../utils/http'
 
 
