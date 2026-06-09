@@ -1,13 +1,47 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { getCategories } from '../../api/category.api'
+import { generateNameId } from '../../utils/utils'
 
 export default function Footer() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => getCategories()
+  })
+  const categories = categoriesData?.data?.result || []
+
+  // Helper to resolve category ID and search keyword dynamically
+  const getCategoryLink = (pattern: string, keyword?: string) => {
+    const found = categories.find((cat: any) =>
+      cat.name.toLowerCase().includes(pattern.toLowerCase())
+    )
+    if (found) {
+      let path = `/products?category=${generateNameId({ name: found.name, id: found._id })}`
+      if (keyword) {
+        path += `&search=${encodeURIComponent(keyword)}`
+      }
+      return path
+    }
+    return '/products'
+  }
+
+  const handlePlaceholderClick = (e: React.MouseEvent, title: string) => {
+    e.preventDefault()
+    setModalTitle(title)
+    setIsOpen(true)
+  }
+
   return (
-    <footer className='bg-gray-800 text-gray-300'>
+    <footer className='bg-gray-800 text-gray-300 relative'>
       <div className='border-b border-gray-700 py-7 px-4'>
         <div className='max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-6'>
           <div>
             <Link to='/login'>
-              <h2 className='text-white text-xl font-semibold mb-1'>Sign Up To Our Newsletter.</h2>
+              <h2 className='text-white text-xl font-semibold mb-1 hover:text-blue-400 transition-colors'>Sign Up To Our Newsletter.</h2>
             </Link>
             <p className='text-sm text-gray-400'>Be the first to hear about the latest offers.</p>
           </div>
@@ -27,86 +61,125 @@ export default function Footer() {
       <div className='max-w-7xl mx-auto px-4 py-10'>
         <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8'>
           <div>
-            <h3 className='text-white text-sm font-semibold mb-4'>Information</h3>
+            <Link to='/products'>
+              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Information</h3>
+            </Link>
             <ul className='space-y-2 text-sm'>
               {[
-              'About Us',
-              'About Zip',
-              'Privacy Policy',
-              'Search',
-              'Terms',
-              'Orders and Returns',
-              'Contact Us',
-              'FAQ',
-              'Advanced Search',
-              'Newsletter Subscription'
-            ].map((item) => (
-              <li key={item}>
-                <Link
-                  to={item === 'Contact Us' ? '/contact' : item === 'FAQ' ? '/faq' : '/'}
-                  className='hover:text-white transition-colors'
-                >
-                  {item}
-                </Link>
-              </li>
-            ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className='text-white text-sm font-semibold mb-4'>PC Parts</h3>
-            <ul className='space-y-2 text-sm'>
-              {[
-                'CPUs',
-                'Add On Cards',
-                'Hard Drives (Internal)',
-                'Graphic Cards',
-                'Keyboards / Mice',
-                'Cases / Power Supplies / Cooling',
-                'RAM (Memory)',
-                'Software',
-                'Speakers / Headsets',
-                'Motherboards'
+                { name: 'About Us', link: '/contact', isPlaceholder: true },
+                { name: 'About Zip', link: '/contact', isPlaceholder: true },
+                { name: 'Privacy Policy', link: '/contact', isPlaceholder: true },
+                { name: 'Search', link: '/products' },
+                { name: 'Terms', link: '/contact', isPlaceholder: true },
+                { name: 'Orders and Returns', link: '/bills' },
+                { name: 'Contact Us', link: '/contact' },
+                { name: 'FAQ', link: '/faq' },
+                { name: 'Advanced Search', link: '/products' },
+                { name: 'Newsletter Subscription', link: '/login', isPlaceholder: true }
               ].map((item) => (
-                <li key={item}>
-                  <Link to={`/products?search=${encodeURIComponent(item)}`} className='hover:text-white transition-colors'>
-                    {item}
-                  </Link>
+                <li key={item.name}>
+                  {item.isPlaceholder ? (
+                    <a
+                      href='#'
+                      onClick={(e) => handlePlaceholderClick(e, item.name)}
+                      className='hover:text-white transition-colors cursor-pointer'
+                    >
+                      {item.name}
+                    </a>
+                  ) : (
+                    <Link
+                      to={item.link}
+                      className='hover:text-white transition-colors'
+                    >
+                      {item.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h3 className='text-white text-sm font-semibold mb-4'>Desktop PCs</h3>
-            <ul className='space-y-2 text-sm'>
-              {['Custom PCs', 'Servers', 'MSI All-In-One PCs', 'HP/Compaq PCs', 'ASUS PCs', 'Tecs PCs'].map((item) => (
-                <li key={item}>
-                  <Link to={`/products?search=${encodeURIComponent(item)}`} className='hover:text-white transition-colors'>
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className='text-white text-sm font-semibold mb-4'>Laptops</h3>
+            <Link to={getCategoryLink('Linh Kiện')}>
+              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>PC Parts</h3>
+            </Link>
             <ul className='space-y-2 text-sm'>
               {[
-                'Everyday Use Notebooks',
-                'MSI Workstation Series',
-                'MSI Prestige Series',
-                'Tablets and Pads',
-                'Netbooks',
-                'Infinity Gaming Notebooks'
-              ].map((item) => (
-                <li key={item}>
-                  <Link to={`/products?search=${encodeURIComponent(item)}`} className='hover:text-white transition-colors'>
-                    {item}
-                  </Link>
-                </li>
-              ))}
+                { name: 'CPUs', keyword: 'CPU' },
+                { name: 'Add On Cards', keyword: 'Card|Adapter' },
+                { name: 'Hard Drives (Internal)', keyword: 'SSD|HDD' },
+                { name: 'Graphic Cards', keyword: 'RTX|GTX|Card Màn Hình' },
+                { name: 'Keyboards / Mice', isAcc: true },
+                { name: 'Cases / Power Supplies / Cooling', keyword: 'Thor|Power|Case|Cooling' },
+                { name: 'RAM (Memory)', keyword: 'Ram|Memory' },
+                { name: 'Software', keyword: 'Software|Windows|Office' },
+                { name: 'Speakers / Headsets', isAcc: true },
+                { name: 'Motherboards', keyword: 'Mainboard|Motherboard|Main' }
+              ].map((item) => {
+                let link = ''
+                if (item.isAcc) {
+                  link = getCategoryLink('Phụ Kiện')
+                } else {
+                  link = getCategoryLink('Linh Kiện', item.keyword)
+                }
+                return (
+                  <li key={item.name}>
+                    <Link to={link} className='hover:text-white transition-colors'>
+                      {item.name}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          <div>
+            <Link to={getCategoryLink('PC')}>
+              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Desktop PCs</h3>
+            </Link>
+            <ul className='space-y-2 text-sm'>
+              {[
+                { name: 'Custom PCs', keyword: 'Gaming|Custom' },
+                { name: 'Servers', keyword: 'Xeon|Server' },
+                { name: 'MSI All-In-One PCs', keyword: 'AIO|All-In-One|MSI' },
+                { name: 'HP/Compaq PCs', keyword: 'HP|Compaq' },
+                { name: 'ASUS PCs', keyword: 'ASUS' },
+                { name: 'Tecs PCs', keyword: 'Tecs' }
+              ].map((item) => {
+                const link = getCategoryLink('PC', item.keyword)
+                return (
+                  <li key={item.name}>
+                    <Link to={link} className='hover:text-white transition-colors'>
+                      {item.name}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          <div>
+            <Link to={getCategoryLink('Laptop')}>
+              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Laptops</h3>
+            </Link>
+            <ul className='space-y-2 text-sm'>
+              {[
+                { name: 'Everyday Use Notebooks', keyword: 'XPS|Dell|Everyday' },
+                { name: 'MSI Workstation Series', keyword: 'MacBook Pro|Workstation' },
+                { name: 'MSI Prestige Series', keyword: 'Prestige|MSI' },
+                { name: 'Tablets and Pads', keyword: 'Tablet|Pad|iPad' },
+                { name: 'Netbooks', keyword: 'Netbook' },
+                { name: 'Infinity Gaming Notebooks', keyword: 'Legion|Strix|Gaming' }
+              ].map((item) => {
+                const link = getCategoryLink('Laptop', item.keyword)
+                return (
+                  <li key={item.name}>
+                    <Link to={link} className='hover:text-white transition-colors'>
+                      {item.name}
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           </div>
 
@@ -136,10 +209,35 @@ export default function Footer() {
 
       <div className='border-t border-gray-700 py-4 px-4'>
         <div className='max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500'>
-          <span className='text-blue-400 font-bold text-base'>PCStore</span>
+          <Link to='/' className='text-blue-400 font-bold text-base hover:text-blue-300 transition-colors'>
+            PCStore
+          </Link>
           <span>© 2026 PCStore. All rights reserved.</span>
         </div>
       </div>
+
+      {/* Premium Glassmorphic Notification Modal */}
+      {isOpen && (
+        <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md transition-opacity duration-300'>
+          <div className='bg-white/95 rounded-2xl p-7 max-w-sm w-full mx-4 shadow-2xl border border-white/20 text-center transform scale-100 transition-all'>
+            <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner'>
+              <svg className='w-8 h-8' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+              </svg>
+            </div>
+            <h4 className='text-gray-900 font-extrabold text-xl mb-2'>{modalTitle}</h4>
+            <p className='text-gray-600 text-sm leading-relaxed mb-6'>
+              Trang thông tin này đang được nâng cấp và sẽ sớm ra mắt quý khách trong phiên bản tiếp theo. Xin cảm ơn sự thông cảm của bạn!
+            </p>
+            <button
+              onClick={() => setIsOpen(false)}
+              className='w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-200 hover:shadow-xl transition-all cursor-pointer'
+            >
+              Đồng ý
+            </button>
+          </div>
+        </div>
+      )}
     </footer>
   )
 }

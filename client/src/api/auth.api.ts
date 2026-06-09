@@ -6,3 +6,11 @@ export function RegisterAcount(body: { name: string; email: string; password: st
 export function LoginAccount(body: { email: string; password: string }) {
   return http.post('users/login', body)
 }
+export function getMe() {
+  return http.get('users/me')
+}
+export function updateMe(body: { name: string; phone?: string; address?: string }) {
+  return http.patch('users/me', body)
+}
+
+

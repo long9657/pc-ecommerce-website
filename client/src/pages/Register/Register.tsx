@@ -6,9 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import Input from '../../components/Input'
 import { useMutation } from '@tanstack/react-query'
 import { RegisterAcount } from '../../api/auth.api'
-import { omit } from 'lodash'
 import { isAxiosUnprocessableEntityError } from '../../utils/utils'
-import type ResponseApi from '../../types/response.type'
 import { toast } from 'react-toastify'
 
 type FormData = Schema

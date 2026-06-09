@@ -48,6 +48,7 @@ class Http {
         if (error.response?.status === HttpStatusCode.Unauthorized) {
           clearLS()
           this.accessToken = ''
+          window.location.href = '/login'
         }
         return Promise.reject(error)
       }
