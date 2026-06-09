@@ -4,13 +4,17 @@ import { getProductDetail } from '../../api/product.api'
 import { addToCart } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
 
+import { getIdFromNameId } from '../../utils/utils'
+
 export default function ProductDetail() {
     const { categorySlug, productSlug } = useParams()
     const navigate = useNavigate()
 
+    const id = getIdFromNameId(productSlug as string)
+
     const { data, isLoading } = useQuery({
-      queryKey: ['product', productSlug],
-      queryFn: () => getProductDetail(productSlug as string)
+      queryKey: ['product', id],
+      queryFn: () => getProductDetail(id)
     })
 
     const queryClient = useQueryClient()
