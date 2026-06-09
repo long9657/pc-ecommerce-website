@@ -9,6 +9,7 @@ import Contact from './pages/Contact'
 import Faq from './pages/Faq'
 import Profile from './pages/Profile'
 import Bills from './pages/Bills'
+import Checkout from './pages/Checkout/Checkout'
 import ProductDetail from './pages/ProductDetail'
 import Orders from './pages/Orders/Orders'
 import AdminLayout from './layouts/AdminLayout/AdminLayout'
@@ -46,17 +47,17 @@ function useRouteElements() {
     {
       path: '/login',
       element: (
-        <RegisterLayout>
+        <MainLayout>
           <Login />
-        </RegisterLayout>
+        </MainLayout>
       )
     },
     {
       path: '/register',
       element: (
-        <RegisterLayout>
+        <MainLayout>
           <Register />
-        </RegisterLayout>
+        </MainLayout>
       )
     },
     {
@@ -96,6 +97,14 @@ function useRouteElements() {
       element: (
         <MainLayout>
           <Bills />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/checkout',
+      element: (
+        <MainLayout>
+          <Checkout />
         </MainLayout>
       )
     },

@@ -52,55 +52,86 @@ export default function Login() {
   })
 
   return (
-    <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
-      <div className='bg-white rounded-lg shadow-md w-full max-w-md p-8'>
-        <h2 className='text-2xl font-bold text-gray-800 mb-6'>Đăng nhập</h2>
+    <div className='max-w-7xl mx-auto px-4 py-8 font-sans animate-fade-in mb-12'>
+      <nav className='flex items-center gap-1.5 text-xs text-dark opacity-70 mb-8'>
+        <Link to='/' className='hover:text-primary transition'>Home</Link>
+        <span className='opacity-50'>›</span>
+        <span className='font-medium text-dark'>Login</span>
+      </nav>
 
-        <form onSubmit={onSubmit} noValidate>
-          <div className='mb-4'>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Email</label>
-            <Input
-              type='email'
-              name='email'
-              placeholder='Nhập email'
-              register={register}
-              errorMessage={errors.email?.message}
-            />
-          </div>
+      <h1 className='text-3xl font-light text-dark leading-tight mb-12'>
+        Customer Login
+      </h1>
 
-          <div className='mb-6'>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Mật khẩu</label>
-            <Input
-              type='password'
-              name='password'
-              placeholder='Nhập mật khẩu'
-              register={register}
-              errorMessage={errors.password?.message}
-              autocomplete='on'
-            />
-          </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12'>
+        {/* Left Column: Login */}
+        <div className='bg-slate-50 p-8 md:p-12'>
+          <h2 className='text-xl font-bold text-dark mb-4'>Registered Customers</h2>
+          <p className='text-gray-500 text-sm mb-6'>If you have an account, sign in with your email address.</p>
+
+          <form onSubmit={onSubmit} noValidate>
+            <div className='mb-6'>
+              <label className='block text-xs font-bold text-dark mb-2'>Email *</label>
+              <Input
+                type='email'
+                name='email'
+                placeholder='Your Email'
+                register={register}
+                errorMessage={errors.email?.message}
+              />
+            </div>
+
+            <div className='mb-8'>
+              <label className='block text-xs font-bold text-dark mb-2'>Password *</label>
+              <Input
+                type='password'
+                name='password'
+                placeholder='Your Password'
+                register={register}
+                errorMessage={errors.password?.message}
+                autocomplete='on'
+              />
+            </div>
+
+            <div className='flex items-center gap-6'>
+              <button
+                type='submit'
+                disabled={LoginAccountMutation.isLoading}
+                className='px-8 py-3 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer'
+              >
+                {LoginAccountMutation.isLoading && (
+                  <svg className='animate-spin h-4 w-4 text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                    <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                    <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+                  </svg>
+                )}
+                Sign In
+              </button>
+              <Link to='#' className='text-primary text-sm font-semibold hover:underline'>
+                Forgot Your Password?
+              </Link>
+            </div>
+          </form>
+        </div>
+
+        {/* Right Column: New Customer */}
+        <div className='bg-slate-50 p-8 md:p-12'>
+          <h2 className='text-xl font-bold text-dark mb-4'>New Customer?</h2>
+          <p className='text-gray-500 text-sm mb-6'>Creating an account has many benefits:</p>
+
+          <ul className='text-dark text-sm space-y-3 mb-10 pl-4 list-disc'>
+            <li>Check out faster</li>
+            <li>Keep more than one address</li>
+            <li>Track orders and more</li>
+          </ul>
 
           <button
-            type='submit'
-            disabled={LoginAccountMutation.isLoading}
-            className='w-full flex justify-center items-center gap-2 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-70 disabled:cursor-not-allowed'
+            onClick={() => navigate('/register')}
+            className='px-8 py-3 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors cursor-pointer'
           >
-            {LoginAccountMutation.isLoading && (
-              <svg className='animate-spin h-5 w-5 text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
-                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
-                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
-              </svg>
-            )}
-            Đăng nhập
+            Create An Account
           </button>
-        </form>
-
-        <p className='text-center text-sm text-gray-500 mt-6'>
-          Chưa có tài khoản?{' '}
-          <Link to='/register' className='text-blue-600 font-medium hover:underline'>
-            Đăng ký ngay
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   )

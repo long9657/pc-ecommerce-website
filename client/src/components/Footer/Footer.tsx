@@ -36,35 +36,33 @@ export default function Footer() {
   }
 
   return (
-    <footer className='bg-gray-800 text-gray-300 relative'>
-      <div className='border-b border-gray-700 py-7 px-4'>
-        <div className='max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-6'>
+    <footer className='bg-black text-gray-400 relative font-sans text-xs'>
+      <div className='py-12 px-4'>
+        <div className='container mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6'>
           <div>
-            <Link to='/login'>
-              <h2 className='text-white text-xl font-semibold mb-1 hover:text-blue-400 transition-colors'>Sign Up To Our Newsletter.</h2>
-            </Link>
+            <h2 className='text-white text-3xl font-light mb-1'>Sign Up To Our Newsletter.</h2>
             <p className='text-sm text-gray-400'>Be the first to hear about the latest offers.</p>
           </div>
-          <div className='flex gap-3 flex-1 max-w-lg min-w-[280px]'>
+          <div className='flex gap-3 flex-1 max-w-sm min-w-[280px] md:justify-end'>
             <input
               type='email'
               placeholder='Your Email'
-              className='flex-1 bg-transparent border border-gray-600 rounded-md px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gray-400'
+              className='flex-1 max-w-[250px] bg-transparent border border-white/20 rounded-md px-4 py-2 text-white text-sm focus:outline-none focus:border-white/50 transition-colors'
             />
-            <button className='bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors'>
+            <button className='bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full text-sm font-semibold transition-colors'>
               Subscribe
             </button>
           </div>
         </div>
       </div>
 
-      <div className='max-w-7xl mx-auto px-4 py-10'>
+      <div className='container mx-auto max-w-7xl px-4 py-12 border-t border-white/10'>
         <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8'>
           <div>
             <Link to='/products'>
-              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Information</h3>
+              <h3 className='text-white text-[13px] font-bold mb-5 hover:text-primary transition-colors'>Information</h3>
             </Link>
-            <ul className='space-y-2 text-sm'>
+            <ul className='space-y-2.5 text-[12px] opacity-70 font-medium'>
               {[
                 { name: 'About Us', link: '/contact', isPlaceholder: true },
                 { name: 'About Zip', link: '/contact', isPlaceholder: true },
@@ -73,7 +71,6 @@ export default function Footer() {
                 { name: 'Terms', link: '/contact', isPlaceholder: true },
                 { name: 'Orders and Returns', link: '/bills' },
                 { name: 'Contact Us', link: '/contact' },
-                { name: 'FAQ', link: '/faq' },
                 { name: 'Advanced Search', link: '/products' },
                 { name: 'Newsletter Subscription', link: '/login', isPlaceholder: true }
               ].map((item) => (
@@ -101,9 +98,9 @@ export default function Footer() {
 
           <div>
             <Link to={getCategoryLink('Linh Kiện')}>
-              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>PC Parts</h3>
+              <h3 className='text-white text-[13px] font-bold mb-5 hover:text-primary transition-colors'>PC Parts</h3>
             </Link>
-            <ul className='space-y-2 text-sm'>
+            <ul className='space-y-2.5 text-[12px] opacity-70 font-medium'>
               {[
                 { name: 'CPUs', keyword: 'CPU' },
                 { name: 'Add On Cards', keyword: 'Card|Adapter' },
@@ -135,9 +132,9 @@ export default function Footer() {
 
           <div>
             <Link to={getCategoryLink('PC')}>
-              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Desktop PCs</h3>
+              <h3 className='text-white text-[13px] font-bold mb-5 hover:text-primary transition-colors'>Desktop PCs</h3>
             </Link>
-            <ul className='space-y-2 text-sm'>
+            <ul className='space-y-2.5 text-[12px] opacity-70 font-medium'>
               {[
                 { name: 'Custom PCs', keyword: 'Gaming|Custom' },
                 { name: 'Servers', keyword: 'Xeon|Server' },
@@ -160,9 +157,9 @@ export default function Footer() {
 
           <div>
             <Link to={getCategoryLink('Laptop')}>
-              <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Laptops</h3>
+              <h3 className='text-white text-[13px] font-bold mb-5 hover:text-primary transition-colors'>Laptops</h3>
             </Link>
-            <ul className='space-y-2 text-sm'>
+            <ul className='space-y-2.5 text-[12px] opacity-70 font-medium'>
               {[
                 { name: 'Everyday Use Notebooks', keyword: 'XPS|Dell|Everyday' },
                 { name: 'MSI Workstation Series', keyword: 'MacBook Pro|Workstation' },
@@ -184,21 +181,21 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className='text-white text-sm font-semibold mb-4'>Address</h3>
-            <div className='text-sm text-gray-400 space-y-2 leading-relaxed'>
+            <h3 className='text-white text-[13px] font-bold mb-5'>Address</h3>
+            <div className='text-[12px] opacity-70 space-y-2.5 leading-relaxed font-medium'>
               <p>Address: Km 10 Nguyen Trai, Ha Noi</p>
               <p>
                 Phones:{' '}
-                <a href='tel:00500584766' className='text-blue-400 hover:text-blue-300'>
+                <a href='tel:00500584766' className='text-primary hover:text-white transition-colors'>
                   (00) 500 584 766
                 </a>
               </p>
-              <p>Mon-Thu: 9:00 AM - 5:30 PM</p>
+              <p>We are open: Monday-Thursday: 9:00 AM - 5:30 PM</p>
               <p>Friday: 9:00 AM - 6:00 PM</p>
               <p>Saturday: 11:00 AM - 5:00 PM</p>
               <p>
                 E-mail:{' '}
-                <a href='mailto:shop@email.com' className='text-blue-400 hover:text-blue-300'>
+                <a href='mailto:shop@email.com' className='text-primary hover:text-white transition-colors'>
                   shop@email.com
                 </a>
               </p>
@@ -207,12 +204,12 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className='border-t border-gray-700 py-4 px-4'>
-        <div className='max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500'>
-          <Link to='/' className='text-blue-400 font-bold text-base hover:text-blue-300 transition-colors'>
+      <div className='border-t border-white/10 py-4 px-4'>
+        <div className='container mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-2 text-xs opacity-60'>
+          <Link to='/' className='text-primary font-bold text-sm hover:text-white transition-colors'>
             PCStore
           </Link>
-          <span>© 2026 PCStore. All rights reserved.</span>
+          <span>Copyright © 2026 PCStore. All rights reserved.</span>
         </div>
       </div>
 

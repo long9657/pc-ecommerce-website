@@ -139,138 +139,132 @@ export default function Products() {
   return (
     <div className='min-h-screen bg-slate-50 font-sans p-6'>
 
-      <nav className='max-w-7xl mx-auto flex items-center gap-2 text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-6'>
-        <Link to='/' className='hover:text-blue-600 transition'>Home</Link>
-        <span>/</span>
-        <Link to='/products' className='hover:text-blue-600 transition text-slate-600'>Products</Link>
-        {categoryFilter !== 'All' && (
-          <>
-            <span>/</span>
-            <span className='text-slate-900 font-black'>{currentCategoryName}</span>
-          </>
-        )}
-      </nav>
-
-      <div className='max-w-7xl mx-auto bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-8 md:p-12 mb-8 relative overflow-hidden shadow-lg border border-slate-800'>
-        <div className='absolute right-0 top-0 w-[50%] h-full opacity-10 bg-radial-gradient from-blue-400 to-transparent pointer-events-none' />
-        <div className='max-w-xl text-white relative z-10 select-none'>
-          <span className='text-[10px] font-extrabold tracking-widest uppercase bg-blue-600/30 text-blue-400 px-3.5 py-1.5 rounded-full border border-blue-500/20'>
-            Products
-          </span>
-          <h1 className='text-3xl md:text-4xl font-extrabold mt-4 tracking-tight leading-tight uppercase font-sans'>
-            {currentCategoryName}
-          </h1>
-          <p className='text-slate-400 mt-2 text-xs md:text-sm leading-relaxed font-medium opacity-90'>
-            Discover raw power and performance components customized for bleeding-edge esports environments. Filter and customize below.
-          </p>
+      <div className='max-w-7xl mx-auto'>
+        <div className='flex items-center gap-1.5 text-xs text-dark opacity-70 mb-4'>
+          <Link to='/' className='hover:text-primary transition'>Home</Link>
+          <span className='opacity-50'>›</span>
+          <Link to='/products' className='hover:text-primary transition'>Products</Link>
+          {categoryFilter !== 'All' && (
+            <>
+              <span className='opacity-50'>›</span>
+              <span className='font-medium text-dark'>{currentCategoryName}</span>
+            </>
+          )}
         </div>
+        <h1 className='text-3xl font-bold text-dark mb-6'>
+          {currentCategoryName} <span className='text-gray-400 font-medium text-xl'>({pagination.total_items})</span>
+        </h1>
       </div>
 
       <div className='max-w-7xl mx-auto flex flex-col lg:flex-row gap-8'>
-        <aside className='w-full lg:w-[260px] flex-shrink-0 space-y-6'>
-          <div className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm'>
-            <div className='flex items-center justify-between border-b border-slate-100 pb-4 mb-4'>
-              <h2 className='text-sm font-extrabold text-slate-800 uppercase tracking-wider'>Filters</h2>
-              {(categoryFilter !== 'All' || minPrice || maxPrice || searchFilter) && (
-                <button
-                  onClick={clearAllFilters}
-                  className='text-[10px] font-bold text-rose-500 hover:text-rose-600 underline cursor-pointer'
-                >
-                  Clear All
-                </button>
-              )}
-            </div>
+        <aside className='w-full lg:w-[240px] flex-shrink-0'>
+          <button onClick={() => navigate(-1)} className='flex items-center gap-1 text-xs font-semibold text-dark mb-4 hover:text-primary transition-colors'>
+            <svg className='w-3 h-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M15 19l-7-7 7-7'/></svg>
+            Back
+          </button>
 
-            {(categoryFilter !== 'All' || minPrice || maxPrice || searchFilter) && (
-              <div className='flex flex-wrap gap-1.5 mb-6 border-b border-slate-100 pb-4'>
-                {categoryFilter !== 'All' && (
-                  <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
-                    {currentCategoryName}
-                    <button onClick={() => updateFilter('category', 'All')} className='hover:text-rose-500 cursor-pointer font-black ml-1'>×</button>
-                  </span>
-                )}
-                {searchFilter && (
-                  <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
-                    "{searchFilter}"
-                    <button onClick={() => updateFilter('search', '')} className='hover:text-rose-500 cursor-pointer font-black ml-1'>×</button>
-                  </span>
-                )}
-                {(minPrice || maxPrice) && (
-                  <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
-                    ${minPrice || '0'} - ${maxPrice || '∞'}
-                    <button
-                      onClick={() => {
-                        const newParams = new URLSearchParams(searchParams)
-                        newParams.delete('minPrice')
-                        newParams.delete('maxPrice')
-                        setSearchParams(newParams)
-                        setPriceInput({ min: '', max: '' })
-                      }}
-                      className='hover:text-rose-500 cursor-pointer font-black ml-1'
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
+          <div className='bg-white pt-2'>
+            <h2 className='text-sm font-bold text-dark text-center mb-4'>Filters</h2>
+            <button
+              onClick={clearAllFilters}
+              className='w-full py-2.5 px-4 mb-6 border border-gray-300 rounded-full text-xs font-semibold text-gray-500 hover:text-dark hover:border-gray-400 transition-colors cursor-pointer'
+            >
+              Clear Filter
+            </button>
+
+            {/* Category Accordion */}
+            <div className='border-b border-gray-200 pb-4 mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4'>
+                <h3 className='text-xs font-bold text-dark'>Category</h3>
+                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
               </div>
-            )}
-
-            <div className='space-y-3 mb-6'>
-              <h3 className='text-xs font-extrabold text-slate-700 uppercase tracking-widest'>Categories</h3>
-              <div className='space-y-1.5'>
-                <button
-                  onClick={() => updateFilter('category', 'All')}
-                  className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${categoryFilter === 'All' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                >
-                  <span>All Categories</span>
-                </button>
-                {categories.map((cat: any) => (
-                  <button
+              <div className='space-y-3'>
+                {categories.slice(0, 5).map((cat: any) => (
+                  <div 
                     key={cat._id}
                     onClick={() => updateFilter('category', generateNameId({ name: cat.name, id: cat._id }))}
-                    className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${categoryFilter === generateNameId({ name: cat.name, id: cat._id }) ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-                      }`}
+                    className={`flex items-center justify-between text-xs cursor-pointer ${categoryFilter === generateNameId({ name: cat.name, id: cat._id }) ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
                   >
                     <span>{cat.name}</span>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className='space-y-3 pt-4 border-t border-slate-100'>
-              <h3 className='text-xs font-extrabold text-slate-700 uppercase tracking-widest'>Price Range</h3>
-              <form onSubmit={handleApplyPrice} className='space-y-3'>
-                <div className='flex items-center gap-2'>
-                  <div className='relative flex-1'>
-                    <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400'>$</span>
-                    <input
-                      type='number'
-                      placeholder='Min'
-                      value={priceInput.min}
-                      onChange={e => setPriceInput(prev => ({ ...prev, min: e.target.value }))}
-                      className='w-full bg-slate-50 border border-slate-200/80 rounded-lg py-1.5 pl-5 pr-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white transition'
-                    />
+            {/* Price Accordion */}
+            <div className='border-b border-gray-200 pb-4 mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4'>
+                <h3 className='text-xs font-bold text-dark'>Price</h3>
+                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
+              </div>
+              <div className='space-y-3'>
+                {[
+                  { label: '$0.00 - $1,000.00', min: '0', max: '1000' },
+                  { label: '$1,000.00 - $2,000.00', min: '1000', max: '2000' },
+                  { label: '$2,000.00 - $3,000.00', min: '2000', max: '3000' },
+                  { label: '$3,000.00 - $4,000.00', min: '3000', max: '4000' },
+                  { label: '$4,000.00 - $5,000.00', min: '4000', max: '5000' },
+                  { label: '$5,000.00 - $6,000.00', min: '5000', max: '6000' },
+                  { label: '$6,000.00 - $7,000.00', min: '6000', max: '7000' },
+                  { label: '$7,000.00 And Above', min: '7000', max: '' }
+                ].map((range, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams)
+                      if(range.min) newParams.set('minPrice', range.min)
+                      else newParams.delete('minPrice')
+                      if(range.max) newParams.set('maxPrice', range.max)
+                      else newParams.delete('maxPrice')
+                      setSearchParams(newParams)
+                    }}
+                    className={`flex items-center justify-between text-xs cursor-pointer ${(minPrice === range.min && maxPrice === range.max) ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
+                  >
+                    <span>{range.label}</span>
                   </div>
-                  <span className='text-slate-300 font-bold text-xs'>-</span>
-                  <div className='relative flex-1'>
-                    <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400'>$</span>
-                    <input
-                      type='number'
-                      placeholder='Max'
-                      value={priceInput.max}
-                      onChange={e => setPriceInput(prev => ({ ...prev, max: e.target.value }))}
-                      className='w-full bg-slate-50 border border-slate-200/80 rounded-lg py-1.5 pl-5 pr-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white transition'
-                    />
-                  </div>
-                </div>
-                <button
-                  type='submit'
-                  className='w-full bg-slate-900 hover:bg-blue-600 text-white py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition cursor-pointer shadow-sm hover:shadow'
-                >
-                  Apply Price
-                </button>
-              </form>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Accordion */}
+            <div className='border-b border-gray-200 pb-4 mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4'>
+                <h3 className='text-xs font-bold text-dark'>Color</h3>
+                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
+              </div>
+              <div className='flex items-center gap-2'>
+                <div className='w-6 h-6 rounded-full bg-black cursor-pointer border-2 border-transparent hover:border-gray-300 transition-colors'></div>
+                <div className='w-6 h-6 rounded-full bg-red-600 cursor-pointer border-2 border-primary transition-colors'></div>
+              </div>
+            </div>
+
+            {/* Filter Name Accordion */}
+            <div className='border-b border-gray-200 pb-4 mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4'>
+                <h3 className='text-xs font-bold text-dark'>Filter Name</h3>
+                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
+              </div>
+              <button className='w-full py-2.5 bg-primary hover:bg-primary/90 text-white rounded-full text-xs font-bold transition-colors cursor-pointer'>
+                Apply Filters (2)
+              </button>
+            </div>
+
+            {/* Brands */}
+            <div className='pt-2'>
+              <h3 className='text-sm font-bold text-dark text-center mb-4'>Brands</h3>
+              <button className='w-full py-2.5 mb-6 border border-gray-300 rounded-full text-xs font-semibold text-gray-500 hover:text-dark hover:border-gray-400 transition-colors cursor-pointer'>
+                All Brands
+              </button>
+            </div>
+            
+            {/* Compare Products & Wish List Box */}
+            <div className='bg-secondary rounded-lg p-5 text-center mt-6'>
+              <h3 className='text-xs font-bold text-dark mb-3'>Compare Products</h3>
+              <p className='text-xs text-gray-500'>You have no items to compare.</p>
+            </div>
+            <div className='bg-secondary rounded-lg p-5 text-center mt-4'>
+              <h3 className='text-xs font-bold text-dark mb-3'>My Wish List</h3>
+              <p className='text-xs text-gray-500'>You have no items in your wish list.</p>
             </div>
           </div>
         </aside>
@@ -353,54 +347,55 @@ export default function Products() {
                 return (
                   <Link to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
                     key={product._id}
-                    className='bg-white rounded-2xl p-5 flex flex-col justify-between border border-slate-200/60 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden'
+                    className='bg-white p-4 flex flex-col justify-between border-r border-b border-gray-200 hover:shadow-xl transition-all duration-300 group relative'
                   >
                     <div>
-                      <div className='flex items-center gap-1.5 text-[9px] font-extrabold uppercase select-none mb-3'>
-                        <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                        <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
-                          {inStock ? 'In Stock' : 'Out of Stock'}
-                        </span>
+                      <div className='flex items-center gap-1.5 text-[10px] font-semibold mb-2'>
+                        {inStock ? (
+                          <>
+                            <svg className='w-3 h-3 text-green-500' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clipRule='evenodd'/></svg>
+                            <span className='text-green-500'>in stock</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className='w-3 h-3 text-red-500' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clipRule='evenodd'/></svg>
+                            <span className='text-red-500'>out of stock</span>
+                          </>
+                        )}
                       </div>
-                      <div className='h-40 my-3 flex items-center justify-center bg-slate-50/60 rounded-2xl p-4 overflow-hidden relative border border-slate-100'>
+                      
+                      <div className='h-40 my-4 flex items-center justify-center relative overflow-hidden px-4'>
                         <img
                           src={product.image}
                           alt={product.name}
                           className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out select-none'
                         />
                       </div>
-                      <div className='flex items-center gap-1.5 my-3.5 select-none'>
-                        <div className='flex text-amber-400'>
+
+                      <div className='flex items-center gap-2 mb-2'>
+                        <div className='flex text-[#E9A426]'>
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <svg
-                              key={i}
-                              className={`w-3.5 h-3.5 fill-current ${i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
-                                }`}
-                              viewBox='0 0 20 20'
-                            >
+                            <svg key={i} className={`w-3.5 h-3.5 fill-current ${i < Math.floor(product.rating || 5) ? 'text-[#E9A426]' : 'text-gray-200'}`} viewBox='0 0 20 20'>
                               <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
                             </svg>
                           ))}
                         </div>
-                        <span className='text-[10px] text-slate-400 font-bold'>
-                          Đã bán ({product.sold || 0})
-                        </span>
+                        <span className='text-[11px] text-gray-400'>Reviews ({product.sold || 4})</span>
                       </div>
 
-                      <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-2 min-h-[36px]'>
+                      <h3 className='text-xs font-semibold text-dark leading-relaxed hover:text-primary transition-colors line-clamp-3 min-h-[50px]'>
                         {product.name}
                       </h3>
                     </div>
-                    <div className='pt-3 border-t border-slate-100/70 flex items-center justify-between mt-auto'>
-                      <div>
-                        {product.price_before_discount && (
-                          <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
-                          </span>
-                        )}
-                        <div className='text-sm font-black text-slate-900 leading-none mt-1'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-                        </div>
+                    
+                    <div className='pt-3 mt-auto relative'>
+                      {product.price_before_discount && (
+                        <span className='text-[12px] line-through text-gray-400 block leading-none select-none mb-1'>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                        </span>
+                      )}
+                      <div className='text-[18px] font-bold text-dark leading-none'>
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                       </div>
 
                       <button
@@ -410,15 +405,10 @@ export default function Products() {
                           handleAddToCart(product._id)
                         }}
                         disabled={!inStock}
-                        className={`h-9 w-9 rounded-xl flex items-center justify-center transition cursor-pointer select-none ${inStock
-                          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
-                          : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          }`}
+                        className={`absolute right-0 bottom-0 h-8 w-8 rounded-full flex items-center justify-center transition-all cursor-pointer select-none opacity-0 group-hover:opacity-100 ${inStock ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                         title={inStock ? 'Add to Cart' : 'Out of Stock'}
                       >
-                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
-                        </svg>
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' /></svg>
                       </button>
                     </div>
                   </Link>
@@ -433,10 +423,10 @@ export default function Products() {
                   <Link
                     key={product._id}
                     to={`/${categorySlug || categories.find((c: any) => c._id === product.category_id)?.slug || 'products'}/${product.slug}`}
-                    className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center gap-6 group relative overflow-hidden text-inherit no-underline block'
+                    className='bg-white p-6 border-b border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row items-center gap-8 group relative no-underline block'
                   >
 
-                    <div className='w-full sm:w-[180px] h-[140px] bg-slate-50/60 rounded-xl flex items-center justify-center p-4 relative border border-slate-100 flex-shrink-0'>
+                    <div className='w-full sm:w-[220px] h-[160px] flex items-center justify-center p-4 relative flex-shrink-0'>
                       <img
                         src={product.image}
                         alt={product.name}
@@ -445,50 +435,50 @@ export default function Products() {
                     </div>
 
                     <div className='flex-1 min-w-0 w-full'>
-                      <div className='flex items-center gap-3 select-none mb-1.5'>
-                        <div className='flex items-center gap-1 text-[9px] font-extrabold uppercase'>
-                          <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                          <span className={inStock ? 'text-emerald-600' : 'text-rose-500'}>
-                            {inStock ? 'In Stock' : 'Out of Stock'}
-                          </span>
+                      <div className='flex items-center gap-3 select-none mb-2'>
+                        <div className='flex items-center gap-1.5 text-[10px] font-semibold'>
+                          {inStock ? (
+                            <>
+                              <svg className='w-3 h-3 text-green-500' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clipRule='evenodd'/></svg>
+                              <span className='text-green-500'>in stock</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className='w-3 h-3 text-red-500' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clipRule='evenodd'/></svg>
+                              <span className='text-red-500'>out of stock</span>
+                            </>
+                          )}
                         </div>
                       </div>
 
-                      <h3 className='text-xs font-black text-slate-800 leading-snug hover:text-blue-600 transition-colors line-clamp-1'>
+                      <h3 className='text-sm font-semibold text-dark leading-snug hover:text-primary transition-colors mb-2'>
                         {product.name}
                       </h3>
 
-                      <p className='text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed'>
-                        {product.description}
-                      </p>
-
-                      <div className='flex items-center gap-1.5 my-2 select-none'>
-                        <div className='flex text-amber-400'>
+                      <div className='flex items-center gap-2 mb-3'>
+                        <div className='flex text-[#E9A426]'>
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <svg
-                              key={i}
-                              className={`w-3.5 h-3.5 fill-current ${i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'
-                                }`}
-                              viewBox='0 0 20 20'
-                            >
+                            <svg key={i} className={`w-3.5 h-3.5 fill-current ${i < Math.floor(product.rating || 5) ? 'text-[#E9A426]' : 'text-gray-200'}`} viewBox='0 0 20 20'>
                               <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
                             </svg>
                           ))}
                         </div>
-                        <span className='text-[10px] text-slate-400 font-bold'>
-                          Đã bán ({product.sold || 0})
-                        </span>
+                        <span className='text-[11px] text-gray-400'>Reviews ({product.sold || 4})</span>
                       </div>
+
+                      <p className='text-xs text-gray-500 line-clamp-2 leading-relaxed max-w-2xl'>
+                        {product.description}
+                      </p>
                     </div>
 
-                    <div className='w-full sm:w-[150px] sm:border-l border-slate-100 sm:pl-6 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-4 flex-shrink-0'>
+                    <div className='w-full sm:w-[150px] flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-4 flex-shrink-0'>
                       <div>
                         {product.price_before_discount && (
-                          <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
+                          <span className='text-[12px] line-through text-gray-400 block leading-none select-none mb-1'>
                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
                           </span>
                         )}
-                        <div className='text-base font-black text-slate-900 leading-none mt-1.5'>
+                        <div className='text-[20px] font-bold text-dark leading-none'>
                           {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                         </div>
                       </div>
@@ -500,13 +490,13 @@ export default function Products() {
                           e.stopPropagation()
                         }}
                         disabled={!inStock}
-                        className={`h-9 px-4 w-full rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase transition cursor-pointer select-none ${inStock
-                          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
-                          : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        className={`h-10 px-6 w-full rounded-full flex items-center justify-center gap-2 text-xs font-bold transition cursor-pointer select-none ${inStock
+                          ? 'bg-primary text-white hover:bg-primary/90'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           }`}
                       >
                         <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' />
                         </svg>
                         <span>Add to Cart</span>
                       </button>

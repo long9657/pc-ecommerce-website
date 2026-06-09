@@ -17,6 +17,8 @@ export default function Bills() {
   const [activeTab, setActiveTab] = useState<'cart' | 'history'>('cart')
   const [historyFilter, setHistoryFilter] = useState<'all' | 1 | 2 | 3 | 4>('all')
   const [selectedCartIds, setSelectedCartIds] = useState<string[]>([])
+  const [isShippingOpen, setIsShippingOpen] = useState(false)
+  const [isDiscountOpen, setIsDiscountOpen] = useState(false)
   
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
   const [checkoutForm, setCheckoutForm] = useState({
@@ -177,197 +179,261 @@ export default function Bills() {
   }
 
   return (
-    <div className='min-h-screen bg-slate-50/60 font-sans p-6'>
-      
-      {/* Navigation Breadcrumb */}
-      <nav className='max-w-4xl mx-auto flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-6 select-none'>
-        <Link to='/' className='hover:text-blue-600 transition'>Home</Link>
-        <span>/</span>
-        <span className='text-slate-900 font-black'>Hóa đơn & Giỏ hàng</span>
-      </nav>
+    <div className='min-h-screen bg-white font-sans px-4 py-8 mb-12'>
+      <div className='max-w-7xl mx-auto'>
+        {/* Navigation Breadcrumb */}
+        <nav className='flex items-center gap-1.5 text-xs text-dark opacity-70 mb-8'>
+          <Link to='/' className='hover:text-primary transition'>Home</Link>
+          <span className='opacity-50'>›</span>
+          <span className='font-medium text-dark'>Shopping Cart</span>
+        </nav>
 
-      {/* Main Container */}
-      <div className='max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden'>
-        
         {/* Navigation big Tabs */}
-        <div className='flex border-b border-slate-100 bg-slate-50/80 p-2 gap-2 select-none'>
+        <div className='flex border-b border-gray-200 mb-8 gap-8'>
           <button
             onClick={() => setActiveTab('cart')}
-            className={`flex-1 py-4.5 rounded-2xl text-xs uppercase font-extrabold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`pb-3 text-sm font-semibold transition-colors cursor-pointer border-b-2 ${
               activeTab === 'cart'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-400 hover:text-slate-700 hover:bg-white/40'
+                ? 'border-primary text-dark'
+                : 'border-transparent text-gray-400 hover:text-dark'
             }`}
           >
-            🛒 Giỏ hàng của tôi
+            Shopping Cart
             {cartItems.length > 0 && (
-              <span className='bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full'>
-                {cartItems.length}
-              </span>
+              <span className='ml-2 text-xs opacity-70'>({cartItems.length})</span>
             )}
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex-1 py-4.5 rounded-2xl text-xs uppercase font-extrabold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`pb-3 text-sm font-semibold transition-colors cursor-pointer border-b-2 ${
               activeTab === 'history'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-400 hover:text-slate-700 hover:bg-white/40'
+                ? 'border-primary text-dark'
+                : 'border-transparent text-gray-400 hover:text-dark'
             }`}
           >
-            📋 Lịch sử đơn mua
+            Order History
             {allHistoryItems.length > 0 && (
-              <span className='bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full'>
-                {allHistoryItems.length}
-              </span>
+              <span className='ml-2 text-xs opacity-70'>({allHistoryItems.length})</span>
             )}
           </button>
         </div>
 
-        <div className='p-6 md:p-8'>
-          {/* ==========================================
-              TAB 1: CART (GIO HANG)
-              ========================================== */}
+        <div>
           {activeTab === 'cart' && (
-            <div className='space-y-6'>
+            <div>
+              <h1 className='text-[32px] font-light text-dark mb-8'>Shopping Cart</h1>
               
-              {/* Select All & Delete Group */}
-              {cartItems.length > 0 && (
-                <div className='flex items-center justify-between border-b border-slate-100 pb-4 select-none'>
-                  <label className='flex items-center gap-2.5 text-xs font-bold text-slate-600 cursor-pointer'>
-                    <input
-                      type='checkbox'
-                      checked={selectedCartIds.length === cartItems.length && cartItems.length > 0}
-                      onChange={handleSelectAll}
-                      className='w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer'
-                    />
-                    Chọn tất cả ({cartItems.length} sản phẩm)
-                  </label>
+              <div className='flex flex-col lg:flex-row gap-8'>
+                {/* Left Column: Cart Items */}
+                <div className='flex-1'>
+                  <div className='overflow-x-auto'>
+                    <table className='w-full text-left border-collapse'>
+                      <thead>
+                        <tr className='border-b border-gray-200 text-sm font-semibold text-dark'>
+                          <th className='pb-4 font-bold'>Item</th>
+                          <th className='pb-4 font-bold'>Price</th>
+                          <th className='pb-4 font-bold'>Qty</th>
+                          <th className='pb-4 font-bold text-right'>Subtotal</th>
+                          <th className='pb-4'></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cartItems.map((item: any) => {
+                          const isMutating = updatePurchaseMutation.isLoading && updatePurchaseMutation.variables?.id === item._id;
+                          return (
+                            <tr key={item._id} className='border-b border-gray-200'>
+                              <td className='py-6 pr-4'>
+                                <div className='flex items-center gap-6'>
+                                  <img
+                                    src={item.product?.image}
+                                    alt={item.product?.name}
+                                    className='w-24 h-24 object-contain shrink-0'
+                                  />
+                                  <div className='max-w-xs'>
+                                    <h4 className='font-semibold text-dark text-sm leading-relaxed'>{item.product?.name}</h4>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className='py-6 text-dark font-bold whitespace-nowrap'>
+                                {formatPrice(item.product?.price)}
+                              </td>
+                              <td className='py-6'>
+                                <div className='flex items-center gap-1 bg-gray-100 rounded px-3 py-2 w-max'>
+                                  <span className='w-6 text-center text-sm font-semibold'>{item.buy_count}</span>
+                                  <div className='flex flex-col gap-1'>
+                                    <button disabled={isMutating} onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count + 1 })} className='cursor-pointer text-gray-500 hover:text-dark'>
+                                      <svg className='w-3 h-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='3' d='M5 15l7-7 7 7'/></svg>
+                                    </button>
+                                    <button disabled={item.buy_count <= 1 || isMutating} onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count - 1 })} className='cursor-pointer text-gray-500 hover:text-dark'>
+                                      <svg className='w-3 h-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='3' d='M19 9l-7 7-7-7'/></svg>
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className='py-6 text-dark font-bold text-right whitespace-nowrap'>
+                                {formatPrice(item.product?.price * item.buy_count)}
+                              </td>
+                              <td className='py-6 text-right pl-4'>
+                                <div className='flex flex-col items-end gap-2'>
+                                  <button onClick={() => deletePurchaseMutation.mutate([item._id])} className='w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-500 transition-colors cursor-pointer'>
+                                    <svg className='w-3 h-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12'/></svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
-                  {selectedCartIds.length > 0 && (
-                    <button
-                      onClick={() => deletePurchaseMutation.mutate(selectedCartIds)}
-                      className='text-xs font-bold text-rose-500 hover:text-rose-600 cursor-pointer transition hover:underline'
-                    >
-                      🗑️ Xóa mục đã chọn ({selectedCartIds.length})
-                    </button>
+                  {cartItems.length === 0 && !isCartLoading && (
+                    <div className='text-center py-12'>
+                      <p className='text-gray-500 mb-6'>Your shopping cart is empty.</p>
+                      <Link to='/products' className='px-8 py-3 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors'>
+                        Continue Shopping
+                      </Link>
+                    </div>
+                  )}
+
+                  {cartItems.length > 0 && (
+                    <div className='flex flex-wrap items-center justify-between mt-8 gap-4'>
+                      <div className='flex flex-wrap gap-4'>
+                        <Link to='/products' className='px-8 py-3 rounded-full border-2 border-gray-300 text-gray-600 font-bold text-sm hover:border-gray-400 transition-colors'>
+                          Continue Shopping
+                        </Link>
+                        <button onClick={() => deletePurchaseMutation.mutate(cartItems.map((i:any)=>i._id))} className='px-8 py-3 rounded-full bg-black text-white font-bold text-sm hover:bg-gray-800 transition-colors cursor-pointer'>
+                          Clear Shopping Cart
+                        </button>
+                      </div>
+                      <button className='px-8 py-3 rounded-full bg-black text-white font-bold text-sm hover:bg-gray-800 transition-colors cursor-pointer'>
+                        Update Shopping Cart
+                      </button>
+                    </div>
                   )}
                 </div>
-              )}
 
-              {/* Cart List */}
-              <div className='space-y-4'>
-                {cartItems.map((item: any) => {
-                  const isChecked = selectedCartIds.includes(item._id)
-                  const isMutating = updatePurchaseMutation.isLoading && updatePurchaseMutation.variables?.id === item._id
-
-                  return (
-                    <div
-                      key={item._id}
-                      className={`rounded-2xl border p-4.5 flex items-center gap-4 transition-all duration-300 ${
-                        isChecked
-                          ? 'border-blue-500/30 bg-blue-50/5 shadow-sm'
-                          : 'border-slate-250/60 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <input
-                        type='checkbox'
-                        checked={isChecked}
-                        onChange={() => handleSelectToggle(item._id)}
-                        className='w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer flex-shrink-0'
-                      />
-
-                      <img
-                        src={item.product?.image}
-                        alt={item.product?.name}
-                        className='w-16 h-16 object-contain rounded-xl bg-slate-50 border border-slate-100 p-1 flex-shrink-0'
-                      />
-
-                      <div className='flex-1 min-w-0'>
-                        <h4 className='font-bold text-slate-800 line-clamp-1 text-sm' title={item.product?.name}>
-                          {item.product?.name}
-                        </h4>
-                        <span className='font-black text-rose-600 mt-2 block text-sm'>
-                          {formatPrice(item.product?.price)}
-                        </span>
-                      </div>
-
-                      <div className='flex items-center gap-2 border border-slate-200 rounded-xl p-1 bg-slate-50 select-none relative'>
-                        <button
-                          disabled={item.buy_count <= 1 || isMutating}
-                          onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count - 1 })}
-                          className='w-7 h-7 bg-white hover:bg-slate-100 rounded-lg flex items-center justify-center font-black text-slate-600 disabled:opacity-50 transition border border-slate-150 cursor-pointer'
+                {/* Right Column: Summary */}
+                {cartItems.length > 0 && (
+                  <div className='w-full lg:w-[350px] shrink-0'>
+                    <div className='bg-slate-50 p-6 mb-4'>
+                      <h2 className='text-xl font-bold text-dark mb-6'>Summary</h2>
+                      
+                      <div className='border-b border-gray-200 pb-4 mb-4'>
+                        <button 
+                          onClick={() => setIsShippingOpen(!isShippingOpen)}
+                          className='w-full flex justify-between items-center text-sm font-semibold text-dark mb-2 cursor-pointer'
                         >
-                          -
+                          Estimate Shipping and Tax
+                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${isShippingOpen ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'/></svg>
                         </button>
+                        <p className='text-xs text-gray-500 mb-4'>Enter your destination to get a shipping estimate.</p>
                         
-                        <span className='w-8 text-center text-xs font-extrabold text-slate-700 min-w-[20px]'>
-                          {item.buy_count}
-                        </span>
-
-                        <button
-                          disabled={isMutating}
-                          onClick={() => updatePurchaseMutation.mutate({ id: item._id, buy_count: item.buy_count + 1 })}
-                          className='w-7 h-7 bg-white hover:bg-slate-100 rounded-lg flex items-center justify-center font-black text-slate-600 disabled:opacity-50 transition border border-slate-150 cursor-pointer'
-                        >
-                          +
-                        </button>
-
-                        {isMutating && (
-                          <div className='absolute inset-0 bg-slate-100/50 flex items-center justify-center rounded-xl'>
-                            <div className='w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin' />
+                        {isShippingOpen && (
+                          <div className='space-y-4 animate-fade-in'>
+                            <div>
+                              <label className='block text-xs font-semibold text-dark mb-1'>Country</label>
+                              <select className='w-full p-2.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:border-primary'>
+                                <option>Australia</option>
+                                <option>Vietnam</option>
+                                <option>United States</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className='block text-xs font-semibold text-dark mb-1'>State/Province</label>
+                              <input type='text' className='w-full p-2.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:border-primary' />
+                            </div>
+                            <div>
+                              <label className='block text-xs font-semibold text-dark mb-1'>Zip/Postal Code</label>
+                              <input type='text' className='w-full p-2.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:border-primary' />
+                            </div>
+                            <div className='pt-2'>
+                              <label className='block text-xs font-semibold text-dark mb-2'>Standard Rate</label>
+                              <label className='flex items-start gap-2 cursor-pointer mb-3'>
+                                <input type='radio' name='shipping_rate' className='mt-0.5' defaultChecked />
+                                <span className='text-xs text-dark leading-tight'>Price may vary depending on the item/destination. Shop Staff will contact you. <b>$21.00</b></span>
+                              </label>
+                              <label className='block text-xs font-semibold text-dark mb-2'>Pickup from store</label>
+                              <label className='flex items-start gap-2 cursor-pointer'>
+                                <input type='radio' name='shipping_rate' className='mt-0.5' />
+                                <span className='text-xs text-dark leading-tight'>1234 Street Adress City Address, 1234 <b>$0.00</b></span>
+                              </label>
+                            </div>
                           </div>
                         )}
                       </div>
 
-                      <button
-                        onClick={() => deletePurchaseMutation.mutate([item._id])}
-                        className='text-[10px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-wider cursor-pointer transition p-2'
-                        title='Xóa khỏi giỏ hàng'
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  );
-                })}
+                      <div className='border-b border-gray-200 pb-4 mb-6'>
+                        <button 
+                          onClick={() => setIsDiscountOpen(!isDiscountOpen)}
+                          className='w-full flex justify-between items-center text-sm font-semibold text-dark cursor-pointer'
+                        >
+                          Apply Discount Code
+                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${isDiscountOpen ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'/></svg>
+                        </button>
+                        
+                        {isDiscountOpen && (
+                          <div className='mt-4 space-y-4 animate-fade-in'>
+                            <div>
+                              <label className='block text-xs font-semibold text-dark mb-1'>Enter discount code</label>
+                              <input type='text' placeholder='Enter Discount code' className='w-full p-2.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:border-primary' />
+                            </div>
+                            <button className='w-full py-2.5 border-2 border-primary text-primary font-bold text-sm rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer'>
+                              Apply Discount
+                            </button>
+                          </div>
+                        )}
+                      </div>
 
-                {cartItems.length === 0 && !isCartLoading && (
-                  <div className='text-center py-16 select-none'>
-                    <div className='w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner mb-4'>
-                      🛒
+                      <div className='space-y-3 mb-6 text-sm'>
+                        <div className='flex justify-between font-semibold'>
+                          <span className='text-dark'>Subtotal</span>
+                          <span className='text-dark'>{formatPrice(cartItems.reduce((acc:any, item:any) => acc + (item.product?.price * item.buy_count), 0))}</span>
+                        </div>
+                        <div className='flex justify-between font-semibold'>
+                          <span className='text-dark'>Shipping</span>
+                          <span className='text-dark'>{formatPrice(21000)}</span>
+                        </div>
+                        <p className='text-[10px] text-gray-400 mb-2 leading-tight'>(Standard Rate - Price may vary depending on the item/destination. TECS Staff will contact you.)</p>
+                        <div className='flex justify-between font-semibold'>
+                          <span className='text-dark'>Tax</span>
+                          <span className='text-dark'>{formatPrice(0)}</span>
+                        </div>
+                        <div className='flex justify-between font-semibold'>
+                          <span className='text-dark'>GST (10%)</span>
+                          <span className='text-dark'>{formatPrice(cartItems.reduce((acc:any, item:any) => acc + (item.product?.price * item.buy_count), 0) * 0.1)}</span>
+                        </div>
+                      </div>
+
+                      <div className='flex justify-between font-bold text-lg text-dark mb-8 border-t border-gray-200 pt-4'>
+                        <span>Order Total</span>
+                        <span>{formatPrice(cartItems.reduce((acc:any, item:any) => acc + (item.product?.price * item.buy_count), 0) * 1.1 + 21000)}</span>
+                      </div>
+
+                      <div className='space-y-3'>
+                        <Link
+                          to='/checkout'
+                          className='w-full py-3.5 bg-primary text-white font-bold text-sm rounded-full hover:bg-primary/90 transition-colors cursor-pointer text-center block'
+                        >
+                          Proceed to Checkout
+                        </Link>
+                        <button className='w-full py-3.5 bg-[#FFC439] text-[#003087] font-bold text-sm rounded-full hover:bg-[#F4B938] transition-colors cursor-pointer flex items-center justify-center gap-1'>
+                          Check out with <span className='font-black italic'>PayPal</span>
+                        </button>
+                        <button className='w-full py-3.5 bg-transparent border-2 border-gray-300 text-gray-600 font-bold text-sm rounded-full hover:border-gray-400 transition-colors cursor-pointer'>
+                          Check Out with Multiple Addresses
+                        </button>
+                      </div>
                     </div>
-                    <h3 className='text-xs font-extrabold uppercase text-slate-600 tracking-wider'>Giỏ hàng trống</h3>
-                    <p className='text-slate-400 font-medium text-xs max-w-sm mx-auto mt-2 leading-relaxed'>
-                      Giỏ hàng của bạn đang trống. Hãy quay lại trang sản phẩm để chọn mua món đồ bạn yêu thích nhé!
-                    </p>
-                    <Link
-                      to='/products'
-                      className='mt-6 inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-md'
-                    >
-                      Tiếp tục mua sắm
-                    </Link>
+                    
+                    <div className='flex items-center justify-center gap-2 mt-4'>
+                      <span className='font-black text-[#6631E0] text-xl tracking-tighter'>zip</span>
+                      <span className='text-gray-500 font-medium text-xs border-l border-gray-300 pl-2'>own it now, up to 6 months<br/>interest free <a href='#' className='underline'>learn more</a></span>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {cartItems.length > 0 && (
-                <div className='bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 shadow-sm select-none'>
-                  <div>
-                    <span className='text-slate-500 block text-xs font-semibold'>Tổng thanh toán ({selectedCartIds.length} sản phẩm):</span>
-                    <span className='text-2xl font-black text-rose-600 block mt-1'>
-                      {formatPrice(totalCartValue)}
-                    </span>
-                  </div>
-                  <button
-                    disabled={selectedCartIds.length === 0 || buyPurchaseMutation.isLoading}
-                    onClick={() => setIsCheckoutModalOpen(true)}
-                    className='w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider py-4 px-10 rounded-xl shadow-lg shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition duration-300'
-                  >
-                    THANH TOÁN NGAY
-                  </button>
-                </div>
-              )}
-
             </div>
           )}
 

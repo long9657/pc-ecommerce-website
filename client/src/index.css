@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --fill-bg-logo: #ee4d2d;
+  --color-primary: #0156FF;
+  --color-secondary: #F5F7FF;
+  --color-dark: #000000;
+  --color-orange: #ee4d2d;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 

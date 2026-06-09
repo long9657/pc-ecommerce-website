@@ -55,89 +55,141 @@ export default function ProductDetail() {
     }
 
     return (
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 font-sans animate-fade-in'>
-        <nav className='flex items-center gap-2 text-xs font-semibold text-slate-400 mb-8'>
-            <Link to='/' className='hover:text-slate-800 transition'>Home</Link>
-            <span>/</span>
-            <Link to={`/${categorySlug}`} className='hover:text-slate-800 transition capitalize'>{categorySlug?.replace(/-/g, ' ')}</Link>
-            <span>/</span>
-            <span className='text-slate-600 truncate max-w-[200px] sm:max-w-none'>{product.name}</span>
-        </nav>
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-100/80 mb-12'>
-            
-            <div className='flex flex-col gap-4'>
-            <div className='aspect-square rounded-2xl bg-slate-50 border border-slate-100/60 p-8 flex items-center justify-center overflow-hidden relative group'>
-                <img 
-                src={product.image} 
-                alt={product.name}
-                className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out'
-                />
-            </div>
-            </div>
-            <div className='flex flex-col justify-between'>
-            <div>
-                <h1 className='text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-snug mb-4'>
+        <div className='max-w-7xl mx-auto px-4 py-8 font-sans animate-fade-in'>
+          <nav className='flex items-center gap-1.5 text-xs text-dark opacity-70 mb-8'>
+            <Link to='/' className='hover:text-primary transition'>Home</Link>
+            <span className='opacity-50'>›</span>
+            <Link to={`/${categorySlug}`} className='hover:text-primary transition capitalize'>{categorySlug?.replace(/-/g, ' ')}</Link>
+            <span className='opacity-50'>›</span>
+            <span className='font-medium text-dark truncate'>{product.name}</span>
+          </nav>
+
+          {/* Top navigation tabs (mock) */}
+          <div className='flex items-center gap-8 border-b border-gray-200 mb-8 pb-4 text-sm font-semibold'>
+            <span className='text-dark border-b-2 border-primary pb-4 -mb-[18px] cursor-pointer'>About Product</span>
+            <span className='text-gray-400 hover:text-dark cursor-pointer'>Details</span>
+            <span className='text-gray-400 hover:text-dark cursor-pointer'>Specs</span>
+          </div>
+
+          <div className='grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16'>
+            {/* Left Column: Title, Price, Action */}
+            <div className='lg:col-span-5 flex flex-col'>
+              <h1 className='text-3xl font-light text-dark leading-tight mb-4'>
                 {product.name}
-                </h1>
-                <div className='flex items-center gap-2 mb-6'>
-                <div className='flex text-amber-400'>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                    <svg 
-                        key={i} 
-                        className={`w-4 h-4 fill-current ${i < Math.floor(product.rating || 5) ? 'text-amber-400' : 'text-slate-200'}`} 
-                        viewBox='0 0 20 20'
-                    >
-                        <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                    </svg>
-                    ))}
+              </h1>
+              
+              <Link to='#' className='text-primary text-xs font-semibold mb-6 hover:underline'>
+                Be the first to review this product
+              </Link>
+
+              <div className='text-gray-500 text-sm mb-6 leading-relaxed'>
+                {product.description || 'MSI MPG Trident 3 is the most compact gaming desktop. Packaged in a 4.7 liters volume case, it has components that are usually found in full tower cases.'}
+              </div>
+
+              {/* Color dots (mock) */}
+              <div className='flex items-center gap-2 mb-6'>
+                <div className='w-6 h-6 rounded-full bg-black cursor-pointer border-2 border-transparent hover:border-gray-300 transition-colors'></div>
+                <div className='w-6 h-6 rounded-full bg-gray-200 cursor-pointer border-2 border-transparent hover:border-gray-400 transition-colors'></div>
+              </div>
+
+              {/* Quantity and Add to Cart */}
+              <div className='flex items-center gap-4 mb-6 mt-auto'>
+                <div className='bg-gray-100 rounded-full px-4 py-2 text-sm font-bold text-dark w-24 flex justify-between items-center select-none'>
+                  <span className='text-gray-400 cursor-pointer hover:text-dark'>-</span>
+                  <span>1</span>
+                  <span className='text-gray-400 cursor-pointer hover:text-dark'>+</span>
                 </div>
-                <span className='text-xs font-bold text-slate-500'>
-                    Lượt xem: {product.view || 0} | Đã bán: {product.sold || 0}
-                </span>
-                </div>
-                <div className='flex items-center gap-1.5 text-xs font-bold mb-6'>
-                <span className={`w-2 h-2 rounded-full ${product.quantity > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                <span className={product.quantity > 0 ? 'text-emerald-600' : 'text-rose-500'}>
-                    {product.quantity > 0 ? `Còn hàng (${product.quantity} sản phẩm)` : 'Hết hàng'}
-                </span>
-                </div>
-                <div className='bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8'>
-                <span className='text-xs font-semibold text-slate-400 block mb-1'>Giá bán chính thức</span>
-                <div className='flex items-baseline gap-3 flex-wrap'>
-                    <span className='text-3xl font-black text-rose-600'>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-                    </span>
-                    {product.price_before_discount && (
-                    <span className='text-base line-through text-slate-400 font-semibold'>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
-                    </span>
-                    )}
-                </div>
-                </div>
-            </div>
-            <div className='flex flex-col sm:flex-row gap-4 mt-4'>
                 <button 
-                onClick={() => addToCartMutation.mutate()}
-                disabled={product.quantity <= 0}
-                className={`flex-1 py-4 rounded-xl font-bold tracking-wide transition shadow-sm hover:shadow-md active:scale-[0.98] cursor-pointer ${
-                    product.quantity > 0 
-                    ? 'bg-slate-900 text-white hover:bg-blue-600' 
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
+                  onClick={() => addToCartMutation.mutate()}
+                  disabled={product.quantity <= 0}
+                  className={`flex-1 py-3.5 rounded-full font-bold text-sm transition-colors cursor-pointer ${
+                      product.quantity > 0 
+                      ? 'bg-primary text-white hover:bg-primary/90' 
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
                 >
-                Thêm vào giỏ
+                  Add to Cart
                 </button>
+                <button className='w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-primary/90 cursor-pointer'>
+                  <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 20 20'><path d='M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z'/></svg>
+                </button>
+              </div>
+
+              {/* Support links */}
+              <div className='flex items-center justify-between text-xs font-semibold text-gray-400 pt-6 border-t border-gray-200'>
+                <div className='flex items-center gap-2 cursor-pointer hover:text-dark'>
+                  <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'/></svg>
+                  Email
+                </div>
+                <div className='flex items-center gap-2 cursor-pointer hover:text-dark'>
+                  <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/></svg>
+                  Compare
+                </div>
+              </div>
             </div>
+
+            {/* Right Column: Image and Gallery */}
+            <div className='lg:col-span-7 flex gap-4'>
+              {/* Vertical Thumbnails */}
+              <div className='flex flex-col gap-2 w-20 flex-shrink-0'>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className='w-full aspect-square border border-gray-200 rounded-md p-2 cursor-pointer hover:border-primary'>
+                    <img src={product.image} className='w-full h-full object-contain' alt='' />
+                  </div>
+                ))}
+              </div>
+              {/* Main Image */}
+              <div className='flex-1 border border-gray-200 rounded-lg p-12 flex items-center justify-center relative group'>
+                 <div className='absolute top-6 left-6 text-[10px] font-bold text-gray-400'>
+                    {product.price_before_discount && (
+                      <span className='line-through block mb-1 text-xs'>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                      </span>
+                    )}
+                    <span className='text-3xl text-dark'>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                    </span>
+                 </div>
+                 <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className='max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-500'
+                 />
+              </div>
             </div>
-        </div>
-        <div className='bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-100/80'>
-            <h2 className='text-xl font-black text-slate-800 mb-6 pb-4 border-b border-slate-100'>
-            Mô tả sản phẩm
-            </h2>
-            <p className='text-slate-600 leading-relaxed whitespace-pre-wrap'>
-                {product.description || 'Chưa có mô tả cho sản phẩm này.'}
+          </div>
+
+          {/* Features Section */}
+          <div className='bg-black w-full text-white py-20 px-8 rounded-lg flex flex-col items-center text-center'>
+            <h2 className='text-4xl md:text-5xl font-light mb-8'>Outplay the Competition</h2>
+            <p className='max-w-2xl text-sm text-gray-400 mb-16'>
+              Experience a 40% boost in computing from last generation. MSI Desktop equips the 10th Gen. Intel® Core™ i7 processor with the upmost computing power to bring you an unparalleled gaming experience.
             </p>
-        </div>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-12 w-full max-w-4xl'>
+              <div className='flex flex-col items-center'>
+                <div className='w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4'>
+                   <svg className='w-8 h-8 text-primary' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M13 10V3L4 14h7v7l9-11h-7z'/></svg>
+                </div>
+                <h3 className='font-bold mb-2'>Intel Core i7</h3>
+                <p className='text-xs text-gray-400'>Processor</p>
+              </div>
+              <div className='flex flex-col items-center'>
+                <div className='w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4'>
+                   <svg className='w-8 h-8 text-primary' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z'/></svg>
+                </div>
+                <h3 className='font-bold mb-2'>RTX 3080</h3>
+                <p className='text-xs text-gray-400'>Graphics</p>
+              </div>
+              <div className='flex flex-col items-center'>
+                <div className='w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4'>
+                   <svg className='w-8 h-8 text-primary' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'/></svg>
+                </div>
+                <h3 className='font-bold mb-2'>1TB SSD</h3>
+                <p className='text-xs text-gray-400'>Storage</p>
+              </div>
+            </div>
+          </div>
+
         </div>
     )
 }

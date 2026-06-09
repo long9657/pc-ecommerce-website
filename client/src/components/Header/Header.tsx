@@ -97,97 +97,94 @@ function Header() {
     if (e.key === 'Enter') navigate('/products?search=' + encodeURIComponent(searchValue))
   }
   return (
-    <>
-      <div className='bg-black text-white text-[11px] py-2 px-6 border-b border-white/10'>
-        <div className='max-w-7xl mx-auto flex items-center justify-between font-sans'>
+    <header className='bg-white border-b border-gray-100'>
+      <div className='container mx-auto px-4 py-4 flex items-center justify-between gap-6'>
+        {/* Logo */}
+        <Link to='/' className='flex-shrink-0'>
+          <svg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'>
+            <rect width='32' height='32' rx='16' fill='#0156FF' />
+            <path d='M10 16L15 21L23 11' stroke='white' strokeWidth='3' strokeLinecap='round' strokeLinejoin='round' />
+          </svg>
+        </Link>
 
-          <div className='flex items-center gap-1.5 opacity-90 select-none cursor-pointer hover:opacity-100 transition'>
-            <span className='text-slate-400'>Mon-Thu:</span>
-            <span className='font-bold text-white'>9:00 AM - 5:30 PM</span>
-            <svg className='w-2.5 h-2.5 text-slate-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M19 9l-7 7-7-7' />
-              <span className='text-slate-400'>Mon-Thu:</span>
-              <span className='font-bold text-white'>9:00 AM - 5:30 PM</span>
-            </svg>
-          </div>
-
-          <div className='hidden md:flex items-center gap-1.5 opacity-90 select-none'>
-            <span className='text-slate-400'>Km 10 Nguyen Trai, Ha Noi</span>
-            <Link to='/contact' className='underline hover:text-blue-400 font-bold transition text-white'>
-              Contact Us
-            </Link>
-          </div>
-
-        </div>
-      </div>
-      <header className='bg-white shadow-md'>
-        <div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
-            <Link to='/' className='text-blue-600 font-bold text-2xl'>
-              PCStore
-            </Link>
-
-          <nav className='hidden lg:flex items-center gap-6 text-sm font-medium text-gray-700 font-sans select-none'>
-            {categories.slice(0, 4).map((cat: any) => (
-              <Link key={cat._id} to={`/products?category=${generateNameId({ name: cat.name, id: cat._id })}`}
- className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
-                {cat.name}
-              </Link>
-            ))}
-            <Link to='/products' className='hover:text-blue-600 transition-colors text-xs font-bold uppercase'>Tất cả</Link>
+        {/* Navigation */}
+        <nav className='hidden xl:flex items-center gap-6 text-[13px] font-semibold text-dark font-sans select-none whitespace-nowrap'>
+          {categories.slice(0, 5).map((cat: any) => (
             <Link
-              to='/products'
-              className='border border-blue-600 text-blue-600 px-4 py-1.5 rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300 font-bold text-xs uppercase'
+              key={cat._id}
+              to={`/products?category=${generateNameId({ name: cat.name, id: cat._id })}`}
+              className='hover:text-primary transition-colors'
             >
-              Khuyến Mãi
+              {cat.name}
             </Link>
-          </nav>
+          ))}
+          <Link to='/products' className='hover:text-primary transition-colors'>
+            All Other Products
+          </Link>
+          <Link to='/products' className='hover:text-primary transition-colors'>
+            Repairs
+          </Link>
+          <Link
+            to='/products'
+            className='border-2 border-primary text-primary px-5 py-1.5 rounded-full hover:bg-primary hover:text-white transition-all duration-300 font-bold'
+          >
+            Our Deals
+          </Link>
+        </nav>
 
-          {/* Tim kiem */}
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="px-4 py-1.5 text-xs border border-gray-200 rounded-full focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300 w-44 md:w-56 bg-slate-50 font-sans font-medium text-slate-700"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyDown={handleSearch}
-          />
-
+        {/* Actions */}
+        <div className='flex items-center gap-5 flex-shrink-0'>
+          {/* Search */}
+          <div className='relative group'>
+            <input
+              type='text'
+              placeholder='Search...'
+              className='w-8 h-8 opacity-0 group-hover:opacity-100 group-hover:w-48 absolute right-0 top-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-full px-4 text-xs focus:outline-none transition-all duration-300 z-10'
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={handleSearch}
+            />
+            <button className='text-dark hover:text-primary transition-colors relative z-20 cursor-pointer w-8 h-8 flex items-center justify-end bg-white rounded-full group-hover:bg-transparent'>
+              <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor' className='w-5 h-5'>
+                <path strokeLinecap='round' strokeLinejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' />
+              </svg>
+            </button>
+          </div>
 
           {/* Cart */}
-          <Link to='/bills' className='relative text-gray-600 hover:text-blue-600 transition-colors'>
+          <Link to='/bills' className='relative text-dark hover:text-primary transition-colors'>
             <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-6 h-6'>
               <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z' />
             </svg>
             {cartItemsCount > 0 && (
-              <span className='absolute -top-2 -right-2 bg-rose-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm'>
+              <span className='absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm'>
                 {cartItemsCount}
               </span>
             )}
           </Link>
 
-
           {/* Account */}
           {isAuthenticated ? (
             <Popover
               renderPopover={
-                <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-40 overflow-hidden font-sans'>
+                <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-40 overflow-hidden font-sans z-50'>
                   {isAdmin && (
                     <Link
                       to='/admin'
-                      className='block w-full bg-blue-50 py-2.5 px-4 text-left text-sm text-blue-600 hover:bg-blue-100 transition font-bold border-b border-gray-100'
+                      className='block w-full bg-blue-50 py-2.5 px-4 text-left text-sm text-primary hover:bg-blue-100 transition font-bold border-b border-gray-100'
                     >
                       🛡️ Admin Panel
                     </Link>
                   )}
                   <Link
                     to='/profile'
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 hover:bg-slate-50 hover:text-blue-600 transition'
+                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark hover:bg-secondary hover:text-primary transition'
                   >
                     My Account
                   </Link>
                   <Link
                     to='/profile/orders'
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 hover:bg-slate-50 hover:text-blue-600 transition'
+                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark hover:bg-secondary hover:text-primary transition'
                   >
                     My Orders
                   </Link>
@@ -204,25 +201,22 @@ function Header() {
                 <img
                   src='https://i.pravatar.cc/32'
                   alt='Avatar'
-                  className='w-8 h-8 rounded-full object-cover border border-gray-200'
+                  className='w-8 h-8 rounded-full object-cover border-2 border-primary/20 hover:border-primary transition-colors'
                 />
-                <span className='text-xs font-semibold text-gray-700 max-w-[80px] truncate hidden md:inline'>
-                  {username}
-                </span>
               </div>
             </Popover>
           ) : (
             <Popover
               renderPopover={
-                <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-36 overflow-hidden font-sans'>
+                <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-36 overflow-hidden font-sans z-50'>
                   <button
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 hover:bg-slate-50 hover:text-blue-600 transition cursor-pointer font-medium'
+                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark hover:bg-secondary hover:text-primary transition cursor-pointer font-medium'
                     onClick={() => navigate('/login')}
                   >
                     Đăng nhập
                   </button>
                   <button
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-gray-700 border-t border-gray-100 hover:bg-slate-50 hover:text-blue-600 transition cursor-pointer font-medium'
+                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark border-t border-gray-100 hover:bg-secondary hover:text-primary transition cursor-pointer font-medium'
                     onClick={() => navigate('/register')}
                   >
                     Đăng ký
@@ -230,28 +224,16 @@ function Header() {
                 </div>
               }
             >
-              <div className='flex items-center gap-1.5 cursor-pointer text-gray-600 hover:text-blue-600 transition duration-300 select-none'>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  strokeWidth={1.5}
-                  stroke='currentColor'
-                  className='w-6 h-6'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    d='M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
-                  />
+              <div className='w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-dark hover:text-primary hover:bg-secondary transition-colors cursor-pointer'>
+                <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-5 h-5'>
+                  <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z' />
                 </svg>
-                <span className='text-xs font-semibold hidden md:inline'>Sign In</span>
               </div>
             </Popover>
           )}
         </div>
-      </header>
-    </>
+      </div>
+    </header>
   );
 }
 
