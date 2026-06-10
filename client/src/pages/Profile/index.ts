@@ -1,2 +1,2 @@
-import Profile from './Profile'
-export default Profile
+import ProfileDashboard from './ProfileDashboard'
+export default ProfileDashboard

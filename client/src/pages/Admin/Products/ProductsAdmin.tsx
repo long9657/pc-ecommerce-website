@@ -50,7 +50,6 @@ export default function ProductsAdmin() {
   
   const products = productsData?.products || []
   const totalPages = productsData?.pagination?.page_size || 1
-  const totalProducts = productsData?.pagination?.total_items || products.length
 
   // Mutations
   const deleteMutation = useMutation({

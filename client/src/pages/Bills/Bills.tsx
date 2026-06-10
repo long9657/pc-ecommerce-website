@@ -10,7 +10,7 @@ export default function Bills() {
   const [isShippingOpen, setIsShippingOpen] = useState(false)
   const [isDiscountOpen, setIsDiscountOpen] = useState(false)
   
-  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
+
   const [checkoutForm, setCheckoutForm] = useState({
     recipient_name: '',
     phone_number: '',
@@ -56,7 +56,7 @@ export default function Bills() {
 
   const deletePurchaseMutation = useMutation({
     mutationFn: (ids: string[]) => deletePurchases({ purchase_ids: ids }),
-    onSuccess: (_, ids) => {
+    onSuccess: () => {
       toast.success('Removed product from cart!')
       queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
     },
@@ -86,15 +86,7 @@ export default function Bills() {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price || 0)
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (cartItems.length === 0) {
-      toast.warning('Cart is empty!')
-      return
-    }
-    setIsCheckoutModalOpen(false)
-    setIsQrModalOpen(true)
-  }
+
 
   const handleConfirmQrPayment = () => {
     buyPurchaseMutation.mutate({
@@ -135,7 +127,7 @@ export default function Bills() {
                     </thead>
                     <tbody>
                       {cartItems.map((item: any) => {
-                        const isMutating = updatePurchaseMutation.isLoading && updatePurchaseMutation.variables?.id === item._id;
+
                         return (
                           <tr key={item._id} className='border-b border-gray-200'>
                             <td className='py-6 pr-4'>

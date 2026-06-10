@@ -1,12 +1,11 @@
-import { useState } from 'react'
+
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getCategories } from '../../api/category.api'
 import { generateNameId } from '../../utils/utils'
 
 export default function Footer() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [modalTitle, setModalTitle] = useState('')
+
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
@@ -29,11 +28,7 @@ export default function Footer() {
     return path
   }
 
-  const handlePlaceholderClick = (e: React.MouseEvent, title: string) => {
-    e.preventDefault()
-    setModalTitle(title)
-    setIsOpen(true)
-  }
+
 
   return (
     <footer className='bg-black text-gray-400 relative font-sans text-xs'>
@@ -232,29 +227,6 @@ export default function Footer() {
           <span className='font-medium text-gray-500'>Copyright © 2020 Shop Pty. Ltd.</span>
         </div>
       </div>
-
-      {/* Premium Glassmorphic Notification Modal */}
-      {isOpen && (
-        <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md transition-opacity duration-300'>
-          <div className='bg-white/95 rounded-2xl p-7 max-w-sm w-full mx-4 shadow-2xl border border-white/20 text-center transform scale-100 transition-all'>
-            <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner'>
-              <svg className='w-8 h-8' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
-              </svg>
-            </div>
-            <h4 className='text-gray-900 font-extrabold text-xl mb-2'>{modalTitle}</h4>
-            <p className='text-gray-600 text-sm leading-relaxed mb-6'>
-              Trang thông tin này đang được nâng cấp và sẽ sớm ra mắt quý khách trong phiên bản tiếp theo. Xin cảm ơn sự thông cảm của bạn!
-            </p>
-            <button
-              onClick={() => setIsOpen(false)}
-              className='w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-200 hover:shadow-xl transition-all cursor-pointer'
-            >
-              Đồng ý
-            </button>
-          </div>
-        </div>
-      )}
     </footer>
   )
 }
