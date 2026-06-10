@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
 import { addToCart } from '../../api/purchase.api'
-import { getCategories } from '../../api/category.api'
 import { generateNameId } from '../../utils/utils'
 import { toast } from 'react-toastify'
 
@@ -217,7 +216,7 @@ export default function ProductList() {
             <div key={row.id} className='flex flex-col'>
               {row.tabs.length > 0 && (
                 <div className='flex gap-6 mb-4 overflow-x-auto whitespace-nowrap lg:pl-0'>
-                  {row.tabs.map((tab, i) => (
+                  {row.tabs.map((tab) => (
                     <button 
                       key={tab} 
                       onClick={() => setActiveTabs(prev => ({ ...prev, [row.id]: prev[row.id] === tab ? '' : tab }))}

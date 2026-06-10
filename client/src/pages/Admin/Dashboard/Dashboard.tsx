@@ -1,4 +1,21 @@
+import { useQuery } from '@tanstack/react-query'
+import { getDashboardStats } from '../../../api/stats.api'
+
 export default function Dashboard() {
+  const { data: statsResponse } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: getDashboardStats
+  })
+
+  const statsData = statsResponse?.data?.data || {
+    todayRevenue: 0,
+    newOrdersCount: 0,
+    outOfStockCount: 0,
+    newCustomersCount: 0
+  }
+
+  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
+
   return (
     <div className='max-w-7xl mx-auto'>
       <h1 className='text-2xl font-bold text-slate-800 mb-6'>Tổng quan (Dashboard)</h1>
@@ -6,10 +23,10 @@ export default function Dashboard() {
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
         {/* Placeholder Stat Cards */}
         {[
-          { label: 'Doanh thu hôm nay', value: '0 đ', color: 'bg-blue-500' },
-          { label: 'Đơn hàng mới', value: '0', color: 'bg-emerald-500' },
-          { label: 'Sản phẩm hết hàng', value: '0', color: 'bg-rose-500' },
-          { label: 'Khách hàng mới', value: '0', color: 'bg-amber-500' }
+          { label: 'Doanh thu hôm nay', value: formatPrice(statsData.todayRevenue), color: 'bg-blue-500' },
+          { label: 'Đơn hàng mới', value: statsData.newOrdersCount.toString(), color: 'bg-emerald-500' },
+          { label: 'Sản phẩm hết hàng', value: statsData.outOfStockCount.toString(), color: 'bg-rose-500' },
+          { label: 'Khách hàng mới', value: statsData.newCustomersCount.toString(), color: 'bg-amber-500' }
         ].map((stat, idx) => (
           <div key={idx} className='bg-white rounded-2xl p-6 border border-slate-200 shadow-sm'>
             <div className='flex items-center gap-4'>

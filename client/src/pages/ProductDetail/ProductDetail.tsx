@@ -54,12 +54,10 @@ export default function ProductDetail() {
     const { categorySlug, productSlug } = useParams()
     const navigate = useNavigate()
     const [activeTab, setActiveTab] = useState<'about' | 'details' | 'specs' | 'reviews'>('about')
-    const [activeImageIndex, setActiveImageIndex] = useState(0)
     const [buyCount, setBuyCount] = useState(1)
     const [showReviewForm, setShowReviewForm] = useState(false)
     const [rating, setRating] = useState(5)
     const [reviewText, setReviewText] = useState('')
-    const [activeColor, setActiveColor] = useState(0)
     const [outplayIndex, setOutplayIndex] = useState(0)
 
     const id = getIdFromNameId(productSlug as string)
