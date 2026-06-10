@@ -51,13 +51,13 @@ export default function Checkout() {
   const buyPurchaseMutation = useMutation({
     mutationFn: (data: { purchase_ids: string[], recipient_name: string, phone_number: string, shipping_address: string }) => buyPurchases(data),
     onSuccess: () => {
-      toast.success('Đặt hàng thành công!')
+      toast.success('Order placed successfully!')
       queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
       queryClient.invalidateQueries({ queryKey: ['purchases', 1] })
       navigate('/bills')
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Đặt hàng thất bại!')
+      toast.error(error.response?.data?.message || 'Order failed!')
     }
   })
 
@@ -69,7 +69,7 @@ export default function Checkout() {
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
     if (cartItems.length === 0) {
-      toast.error('Giỏ hàng trống!')
+      toast.error('Cart is empty!')
       return
     }
     

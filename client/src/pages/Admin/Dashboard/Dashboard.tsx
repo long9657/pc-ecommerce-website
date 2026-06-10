@@ -18,34 +18,31 @@ export default function Dashboard() {
 
   return (
     <div className='max-w-7xl mx-auto'>
-      <h1 className='text-2xl font-bold text-slate-800 mb-6'>Tổng quan (Dashboard)</h1>
+      <h1 className='text-xl font-semibold text-dark mb-6'>Dashboard Overview</h1>
       
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-        {/* Placeholder Stat Cards */}
+        {/* Metric Cards */}
         {[
-          { label: 'Doanh thu hôm nay', value: formatPrice(statsData.todayRevenue), color: 'bg-blue-500' },
-          { label: 'Đơn hàng mới', value: statsData.newOrdersCount.toString(), color: 'bg-emerald-500' },
-          { label: 'Sản phẩm hết hàng', value: statsData.outOfStockCount.toString(), color: 'bg-rose-500' },
-          { label: 'Khách hàng mới', value: statsData.newCustomersCount.toString(), color: 'bg-amber-500' }
+          { label: "Today's Revenue", value: formatPrice(statsData.todayRevenue) },
+          { label: 'New Orders', value: statsData.newOrdersCount.toString() },
+          { label: 'Out of Stock', value: statsData.outOfStockCount.toString() },
+          { label: 'New Customers', value: statsData.newCustomersCount.toString() }
         ].map((stat, idx) => (
-          <div key={idx} className='bg-white rounded-2xl p-6 border border-slate-200 shadow-sm'>
-            <div className='flex items-center gap-4'>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold ${stat.color}`}>
-                +
-              </div>
-              <div>
-                <div className='text-sm font-semibold text-slate-500'>{stat.label}</div>
-                <div className='text-2xl font-black text-slate-800'>{stat.value}</div>
-              </div>
+          <div key={idx} className='bg-white p-6 border border-gray-200 rounded-md shadow-sm'>
+            <div className='flex items-center justify-between mb-4'>
+              <div className='text-sm font-semibold text-gray-500 uppercase tracking-wider'>{stat.label}</div>
             </div>
+            <div className='text-2xl font-bold text-dark'>{stat.value}</div>
           </div>
         ))}
       </div>
 
-      <div className='bg-white rounded-2xl p-8 border border-slate-200 shadow-sm min-h-[400px] flex items-center justify-center flex-col'>
-        <div className='text-6xl mb-4'>📈</div>
-        <h2 className='text-xl font-bold text-slate-700 mb-2'>Khu vực biểu đồ</h2>
-        <p className='text-slate-500 font-medium'>Dữ liệu thống kê sẽ được hiển thị tại đây trong tương lai.</p>
+      <div className='bg-white p-8 border border-gray-200 rounded-md shadow-sm min-h-[400px] flex items-center justify-center flex-col text-center'>
+        <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <h2 className='text-xl font-semibold text-dark mb-2'>Revenue Statistics</h2>
+        <p className='text-gray-500 text-sm'>Statistical data will be displayed here in the future.</p>
       </div>
     </div>
   )

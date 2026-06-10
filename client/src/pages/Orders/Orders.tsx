@@ -1,18 +1,42 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getOrders, cancelOrder } from '../../api/purchase.api'
+import { getOrders, cancelOrder, addToCart } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
+import { useNavigate } from 'react-router'
 
 const tabs = [
-  { id: 'all', name: 'Tất cả', status: -1 },
-  { id: 'wait', name: 'Chờ xác nhận', status: 1 },
-  { id: 'progress', name: 'Đang xử lý', status: 2 },
-  { id: 'delivered', name: 'Đã giao', status: 3 },
-  { id: 'cancelled', name: 'Đã hủy', status: 4 }
+  { id: 'all', name: 'All Orders', status: -1 },
+  { id: 'wait', name: 'Pending', status: 1 },
+  { id: 'progress', name: 'Processing', status: 2 },
+  { id: 'shipping', name: 'Shipping', status: 3 },
+  { id: 'delivered', name: 'Delivered', status: 4 },
+  { id: 'cancelled', name: 'Cancelled', status: 5 }
 ]
+
+const STATUS_LABELS: Record<number, { label: string; color: string; bg: string }> = {
+  1: { label: 'Pending', color: 'border-orange-200 text-orange-600', bg: 'bg-orange-500' },
+  2: { label: 'Processing', color: 'border-blue-200 text-blue-600', bg: 'bg-blue-500' },
+  3: { label: 'Shipping', color: 'border-indigo-200 text-indigo-600', bg: 'bg-indigo-500' },
+  4: { label: 'Delivered', color: 'border-emerald-200 text-emerald-600', bg: 'bg-emerald-500' },
+  5: { label: 'Cancelled', color: 'border-gray-200 text-gray-500', bg: 'bg-gray-400' }
+}
+
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
+}
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
 
 export default function Orders() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState(tabs[0])
 
   const { data: ordersData, isLoading } = useQuery({
@@ -23,151 +47,164 @@ export default function Orders() {
   const cancelOrderMutation = useMutation({
     mutationFn: (id: string) => cancelOrder(id),
     onSuccess: () => {
-      toast.success('Đã hủy đơn hàng thành công')
+      toast.success('Order cancelled successfully')
       queryClient.invalidateQueries(['orders', activeTab.status])
       queryClient.invalidateQueries(['orders', -1])
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Không thể hủy đơn hàng này')
+      toast.error(error.response?.data?.message || 'Cannot cancel this order')
     }
   })
 
-  const orders = ordersData?.data?.result || []
+  const addToCartMutation = useMutation({
+    mutationFn: (body: { product_id: string; buy_count: number }) => addToCart(body)
+  })
 
-  // Nhóm các purchase lại thành đơn hàng? Backend hiện tại coi mỗi purchase là 1 đơn.
-  // Giao diện hiển thị:
-  
-  const getStatusText = (status: number) => {
-    switch (status) {
-      case 1: return { text: 'CHỜ XÁC NHẬN', color: 'text-orange-500' }
-      case 2: return { text: 'ĐANG XỬ LÝ', color: 'text-blue-500' }
-      case 3: return { text: 'ĐÃ GIAO HÀNG', color: 'text-green-500' }
-      case 4: return { text: 'ĐÃ HỦY', color: 'text-red-500' }
-      default: return { text: 'KHÔNG XÁC ĐỊNH', color: 'text-gray-500' }
+  const handleBuyAgain = async (purchases: any[]) => {
+    try {
+      // Gọi api thêm vào giỏ hàng cho từng sản phẩm trong đơn hàng
+      const promises = purchases.map(purchase => 
+        addToCartMutation.mutateAsync({ product_id: purchase.product_id, buy_count: purchase.buy_count })
+      )
+      await Promise.all(promises)
+      toast.success('Added products to cart')
+      queryClient.invalidateQueries(['purchases', 0]) // Invalidate cart
+      navigate('/bills') // Chuyển đến trang giỏ hàng
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error adding to cart')
     }
   }
 
-  return (
-    <div className='max-w-4xl mx-auto px-4 py-8 font-sans min-h-[70vh]'>
-      <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>
-        <div className='bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white'>
-          <h2 className='text-2xl font-bold'>Đơn hàng của tôi</h2>
-          <p className='text-blue-100 text-sm mt-1'>Quản lý và theo dõi trạng thái đơn hàng của bạn</p>
-        </div>
+  const orders = ordersData?.data?.result || []
 
-        {/* Tabs */}
-        <div className='flex overflow-x-auto border-b border-gray-200 bg-white sticky top-0 z-10'>
-          {tabs.map((tab) => (
+  return (
+    <div className='bg-transparent font-sans'>
+      <h2 className='text-xl font-bold text-dark mb-6'>My Orders</h2>
+
+      {/* Tabs */}
+      <div className='flex gap-8 overflow-x-auto border-b border-gray-200 mb-6 select-none max-w-full scrollbar-none'>
+        {tabs.map((tab) => {
+          const isSelected = activeTab.id === tab.id
+          return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-4 px-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                activeTab.id === tab.id 
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/50' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              className={`whitespace-nowrap py-4 text-sm font-semibold transition cursor-pointer flex-shrink-0 border-b-2 ${
+                isSelected
+                  ? 'border-primary text-dark'
+                  : 'border-transparent text-gray-400 hover:text-dark'
               }`}
             >
               {tab.name}
             </button>
-          ))}
-        </div>
+          )
+        })}
+      </div>
 
-        <div className='p-6 bg-gray-50/50 space-y-4'>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className='text-center py-16 bg-white rounded-xl border border-gray-100'>
-              <svg className='w-16 h-16 mx-auto text-gray-300 mb-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='1.5' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'></path>
+      <div className='space-y-0'>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className='text-center py-20 select-none'>
+            <div className='mx-auto w-24 h-24 mb-6 opacity-80'>
+              <svg viewBox="0 0 117 117" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="58.5" cy="58.5" r="58.5" fill="#F5F7FF"/>
+                <path d="M42 45H75M42 58H60M35 30H82C85.866 30 89 33.134 89 37V87C89 90.866 85.866 94 82 94H35C31.134 94 28 90.866 28 87V37C28 33.134 31.134 30 35 30Z" stroke="#0156FF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <p className='text-gray-500 font-medium text-lg'>Chưa có đơn hàng nào</p>
             </div>
-          ) : (
-            orders.map((order: any) => {
-              const statusInfo = getStatusText(order.status)
-              
-              return (
-                <div key={order._id} className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
-                  {/* Header đơn hàng */}
-                  <div className='flex justify-between items-center px-6 py-3 border-b border-gray-100 bg-gray-50'>
-                    <div className='flex items-center gap-2'>
-                      <span className='font-bold text-gray-700 text-sm'>
-                        Mã đơn: <span className='text-blue-600'>#{order._id.substring(0, 8).toUpperCase()}</span>
-                      </span>
-                      <span className='text-gray-300'>|</span>
-                      <span className='text-gray-500 text-sm'>{new Date(order.created_at).toLocaleDateString('en-US')}</span>
-                    </div>
-                    <div className={`font-bold text-sm flex items-center gap-1.5 ${statusInfo.color}`}>
-                      {statusInfo.text}
-                    </div>
+            <p className='text-gray-500 font-medium text-sm'>You have placed no orders.</p>
+          </div>
+        ) : (
+          orders.map((order: any) => {
+            const info = STATUS_LABELS[order.status]
+            
+            return (
+              <div key={order._id} className='border-b border-gray-200 py-6 last:border-0'>
+                {/* Header đơn hàng */}
+                <div className='flex flex-col sm:flex-row justify-between sm:items-center pb-4 mb-4 gap-4'>
+                  <div className='flex items-center gap-3'>
+                    <span className='font-semibold text-dark text-sm'>
+                      Order ID: #{order._id.substring(0, 8).toUpperCase()}
+                    </span>
+                    <span className='w-1 h-1 rounded-full bg-gray-300'></span>
+                    <span className='text-gray-500 text-xs'>{formatDate(order.created_at)}</span>
                   </div>
+                  {info && (
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded border ${info.color}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${info.bg}`} />
+                      {info.label}
+                    </span>
+                  )}
+                </div>
 
-                  {/* Danh sách sản phẩm trong đơn hàng */}
-                  <div className='flex flex-col border-b border-gray-100'>
-                    {order.purchases?.map((item: any) => (
-                      <div key={item._id} className='p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start border-b last:border-0 border-gray-100'>
-                        <img src={item.product?.image} className='w-24 h-24 object-contain rounded-lg bg-gray-50 border border-gray-100' alt={item.product?.name} />
-                        <div className='flex-1 text-center sm:text-left w-full'>
-                          <h4 className='font-bold text-gray-800 text-lg line-clamp-2'>{item.product?.name}</h4>
-                          <div className='mt-2 text-gray-500 text-sm flex flex-col sm:flex-row gap-2 sm:gap-6'>
-                            {item.variant && <span>Phân loại: <span className='text-gray-700 font-medium'>{item.variant}</span></span>}
-                            <span>Số lượng: <span className='text-gray-700 font-medium'>x{item.buy_count}</span></span>
-                          </div>
-                        </div>
-                        <div className='text-right'>
-                          <span className='text-gray-500 line-through text-sm mr-2'>
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price * 1.2)}
-                          </span>
-                          <span className='font-bold text-rose-600 text-lg whitespace-nowrap block mt-1'>
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
-                          </span>
+                {/* Danh sách sản phẩm trong đơn hàng */}
+                <div className='flex flex-col'>
+                  {order.purchases?.map((item: any) => (
+                    <div key={item._id} className='p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start border-b last:border-0 border-gray-100'>
+                      <div className='w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center p-2 flex-shrink-0'>
+                        <img src={item.product?.image} className='w-full h-full object-contain' alt={item.product?.name} />
+                      </div>
+                      <div className='flex-1 min-w-0'>
+                        <h4 className='font-semibold text-dark text-sm leading-snug line-clamp-2 mb-1.5'>{item.product?.name}</h4>
+                        <div className='text-xs text-gray-500 flex flex-col sm:flex-row gap-2 sm:gap-6'>
+                          {item.variant && <span>Variant: <span className='text-dark font-medium'>{item.variant}</span></span>}
+                          <span>Qty: <span className='text-dark font-medium'>x{item.buy_count}</span></span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Footer đơn hàng */}
-                  <div className='px-6 py-4 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4'>
-                    <div className='text-gray-500 text-sm'>
-                      Đang giao đến: <span className='font-semibold text-gray-700'>{order.recipient_name || 'Khách hàng'}</span>
-                    </div>
-                    <div className='flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end'>
-                      <div className='text-right'>
-                        <span className='text-gray-600 text-sm mr-2'>Tổng cộng:</span>
-                        <span className='text-xl font-black text-rose-600'>
-                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.final_price)}
+                      <div className='text-right min-w-[120px]'>
+                        <span className='text-xs text-gray-500 block mb-1'>Unit Price</span>
+                        <span className='text-sm font-semibold text-dark block'>
+                          {formatPrice(item.price)}
                         </span>
                       </div>
-                      
+                    </div>
+                  ))}
+                </div>
+
+                <div className='pt-4 flex flex-col sm:flex-row justify-between items-center gap-4'>
+                  <div className='text-gray-500 text-xs'>
+                    Delivering to: <span className='font-semibold text-dark'>{order.recipient_name || 'Customer'}</span>
+                  </div>
+                  <div className='flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto'>
+                    <div className='text-right flex items-center gap-3'>
+                      <span className='text-xs text-gray-500'>Total amount:</span>
+                      <span className='text-base font-bold text-dark'>
+                        {formatPrice(order.final_price)}
+                      </span>
+                    </div>
+                    
+                    <div className='flex gap-3'>
                       {(order.status === 1 || order.status === 2) && (
                         <button 
                           onClick={() => {
-                            if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+                            if (window.confirm('Are you sure you want to cancel this order?')) {
                               cancelOrderMutation.mutate(order._id)
                             }
                           }}
                           disabled={cancelOrderMutation.isLoading}
-                          className='px-6 py-2 border border-gray-300 text-gray-700 bg-white font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm'
+                          className='text-red-500 hover:underline text-xs font-semibold transition cursor-pointer disabled:opacity-50'
                         >
-                          Hủy đơn
+                          Cancel order
                         </button>
                       )}
-                      {(order.status === 3 || order.status === 4) && (
+                      {(order.status === 4 || order.status === 5) && (
                         <button 
-                          className='px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md shadow-blue-200'
+                          onClick={() => handleBuyAgain(order.purchases || [])}
+                          disabled={addToCartMutation.isLoading}
+                          className='text-primary hover:underline text-xs font-semibold transition cursor-pointer disabled:opacity-50'
                         >
-                          Mua lại
+                          {addToCartMutation.isLoading ? 'Adding...' : 'Buy again'}
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
-              )
-            })
-          )}
-        </div>
+              </div>
+            )
+          })
+        )}
       </div>
     </div>
   )
