@@ -64,8 +64,6 @@ export default function ProductDetail() {
 
     const id = getIdFromNameId(productSlug as string)
 
-    const id = getIdFromNameId(productSlug as string)
-
     const { data, isLoading } = useQuery({
       queryKey: ['product', id],
       queryFn: () => getProductDetail(id)
