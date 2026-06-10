@@ -1,6 +1,13 @@
 import { ObjectId } from 'mongodb'
 
 // status: 0 = in_cart, 1 = wait_for_confirmation, 2 = in_progress, 3 = delivered, 4 = cancelled
+export enum PurchaseStatus {
+  IN_CART = 0,
+  WAIT_FOR_CONFIRMATION = 1,
+  IN_PROGRESS = 2,
+  DELIVERED = 3,
+  CANCELLED = 4
+}
 interface PurchaseType {
   _id?: ObjectId
   user_id: ObjectId

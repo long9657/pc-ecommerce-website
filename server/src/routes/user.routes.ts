@@ -1,6 +1,7 @@
 import { Router } from 'express'
-import { getMeController, loginController, logoutController, refreshTokenController, registerController, getAllUsersAdminController, deleteUserAdminController, forgotPasswordController, resetPasswordController } from '~/controllers/users.controllers'
-import { accessTokenValidator, loginValidator, refreshTokenValidator, registerValidator, isAdminValidator, forgotPasswordValidator, resetPasswordValidator } from '~/middlewares/user.middlewares'
+import { getMeController, loginController, logoutController, refreshTokenController, registerController, getAllUsersAdminController, deleteUserAdminController, forgotPasswordController, resetPasswordController, updateMeController } from '~/controllers/users.controllers'
+import { accessTokenValidator, loginValidator, refreshTokenValidator, registerValidator, isAdminValidator, forgotPasswordValidator, resetPasswordValidator, updateMeValidator } from '~/middlewares/user.middlewares'
+
 import { wrapRequestHandler } from '~/utils/wrap'
 const userRouter = Router()
 
@@ -27,6 +28,14 @@ userRouter.get(
   accessTokenValidator,
   wrapRequestHandler(getMeController)
 )
+
+userRouter.patch(
+  '/me',
+  accessTokenValidator,
+  updateMeValidator,
+  wrapRequestHandler(updateMeController)
+)
+
 
 userRouter.get(
   '/admin',

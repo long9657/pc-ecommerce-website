@@ -55,6 +55,17 @@ export const getMeController = async (req: Request, res: Response) => {
   })
 }
 
+export const updateMeController = async (req: Request, res: Response) => {
+  const user_id = req.decoded_authorization.user_id
+  const { name, phone, address } = req.body
+  const result = await userServices.updateMe(user_id, { name, phone, address })
+  return res.json({
+    message: 'Cập nhật thông tin thành công',
+    result
+  })
+}
+
+
 export const getAllUsersAdminController = async (req: Request, res: Response) => {
   const result = await userServices.getAllUsersAdmin()
   return res.json({
@@ -64,7 +75,7 @@ export const getAllUsersAdminController = async (req: Request, res: Response) =>
 }
 
 export const deleteUserAdminController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const result = await userServices.deleteUserAdmin(id)
   return res.json({
     message: 'Xóa người dùng thành công',

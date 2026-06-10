@@ -18,7 +18,7 @@ export const getProductsController = async (req: Request, res: Response) => {
 }
 
 export const getProductDetailController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const result = await productServices.getProductDetail(id)
   if (!result) {
     return res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
@@ -30,7 +30,7 @@ export const getProductDetailController = async (req: Request, res: Response) =>
 }
 
 export const updateProductController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const result = await productServices.updateProduct(id, req.body)
   return res.json({
     message: 'Cập nhật sản phẩm thành công',
@@ -39,9 +39,9 @@ export const updateProductController = async (req: Request, res: Response) => {
 }
 
 export const deleteProductController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const result = await productServices.deleteProduct(id)
   return res.json({
-    message: result.message
+    message: result?.message || 'Xóa sản phẩm thành công'
   })
 }

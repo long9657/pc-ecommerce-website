@@ -16,6 +16,10 @@ interface ProductType {
   category_id: ObjectId
   image: string
   images?: string[]
+  brand?: string
+  sku?: string
+  warranty?: string
+  specs?: { key: string; value: string }[]
   variants?: ProductVariant[]
   price: number
   price_before_discount: number
@@ -36,6 +40,10 @@ export default class Product {
   category_id: ObjectId
   image: string
   images: string[]
+  brand: string
+  sku: string
+  warranty: string
+  specs: { key: string; value: string }[]
   variants: ProductVariant[]
   price: number
   price_before_discount: number
@@ -56,6 +64,10 @@ export default class Product {
     this.category_id = product.category_id
     this.image = product.image
     this.images = product.images || []
+    this.brand = product.brand || ''
+    this.sku = product.sku || ''
+    this.warranty = product.warranty || ''
+    this.specs = product.specs || []
     this.variants = product.variants || []
     this.price = product.price
     this.price_before_discount = product.price_before_discount

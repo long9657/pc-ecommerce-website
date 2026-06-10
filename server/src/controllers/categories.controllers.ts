@@ -18,7 +18,7 @@ export const getCategoriesController = async (req: Request, res: Response) => {
 }
 
 export const updateCategoryController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const result = await categoryServices.updateCategory(id, req.body)
   return res.json({
     message: 'Cập nhật danh mục thành công',
@@ -27,7 +27,7 @@ export const updateCategoryController = async (req: Request, res: Response) => {
 }
 
 export const deleteCategoryController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const result = await categoryServices.deleteCategory(id)
   return res.json({
     message: result.message

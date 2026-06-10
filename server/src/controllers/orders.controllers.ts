@@ -19,7 +19,7 @@ export const getAllOrdersAdminController = async (req: Request, res: Response) =
 }
 
 export const updateOrderStatusAdminController = async (req: Request, res: Response) => {
-  const result = await orderServices.updateOrderStatusAdmin(req.params.id, req.body.status)
+  const result = await orderServices.updateOrderStatusAdmin(req.params.id as string, req.body.status)
   return res.json({
     message: 'Cập nhật trạng thái đơn hàng thành công',
     result
@@ -27,7 +27,7 @@ export const updateOrderStatusAdminController = async (req: Request, res: Respon
 }
 
 export const cancelOrderController = async (req: Request, res: Response) => {
-  const result = await orderServices.cancelOrder(req.params.id, req.decoded_authorization.user_id)
+  const result = await orderServices.cancelOrder(req.params.id as string, req.decoded_authorization.user_id)
   return res.json({
     message: 'Hủy đơn hàng thành công',
     result

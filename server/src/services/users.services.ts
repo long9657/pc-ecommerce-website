@@ -94,6 +94,22 @@ class UserServices {
     return user
   }
 
+  async updateMe(user_id: string, payload: { name?: string; phone?: string; address?: string }) {
+    const user = await database.users.findOneAndUpdate(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          ...(payload.name && { name: payload.name }),
+          ...(payload.phone && { phone: payload.phone }),
+          ...(payload.address && { address: payload.address }),
+          updated_at: new Date()
+        }
+      },
+      { returnDocument: 'after', projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+    )
+    return user
+  }
+
   async getAllUsersAdmin() {
     const users = await database.users
       .find({}, { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } })

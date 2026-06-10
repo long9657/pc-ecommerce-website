@@ -21,7 +21,7 @@ export const getPurchasesController = async (req: Request, res: Response) => {
 }
 
 export const updatePurchaseController = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const id = req.params.id as string
   const { buy_count } = req.body
   const result = await purchaseServices.updatePurchase(id, buy_count)
   return res.json({

@@ -340,3 +340,39 @@ export const resetPasswordValidator = validate(
     ['body']
   )
 )
+
+export const updateMeValidator = validate(
+  checkSchema(
+    {
+      name: {
+        optional: true,
+        isString: {
+          errorMessage: USERS_MESSAGES.NAME_MUST_BE_A_STRING
+        },
+        isLength: {
+          options: {
+            min: 1,
+            max: 100
+          },
+          errorMessage: USERS_MESSAGES.NAME_LENGTH_MUST_BE_FROM_1_TO_100
+        },
+        trim: true
+      },
+      phone: {
+        optional: true,
+        isString: {
+          errorMessage: 'Phone must be a string'
+        },
+        trim: true
+      },
+      address: {
+        optional: true,
+        isString: {
+          errorMessage: 'Address must be a string'
+        },
+        trim: true
+      }
+    },
+    ['body']
+  )
+)

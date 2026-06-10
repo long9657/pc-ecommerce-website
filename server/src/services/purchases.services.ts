@@ -2,6 +2,8 @@ import { ObjectId } from 'mongodb'
 import Purchase from '~/models/schemas/Purchase.schema'
 import Order, { OrderStatus, PaymentMethod, PaymentStatus } from '~/models/schemas/Order.schema'
 import database from './database.services'
+import { ErrorWithStatus } from '~/models/Errors'
+import HTTP_STATUS from '~/constants/httpStatus'
 
 export enum PurchaseStatus {
   IN_CART = 0,
@@ -14,11 +16,23 @@ export enum PurchaseStatus {
 class PurchaseServices {
   async addToCart(user_id: string, payload: { product_id: string; buy_count: number }) {
     const { product_id, buy_count } = payload
+
+    const product = await database.products.findOne({ _id: new ObjectId(product_id) })
+    if (!product) throw new ErrorWithStatus({ message: 'Sản phẩm không tồn tại', status: HTTP_STATUS.NOT_FOUND })
+
     const purchaseInDb = await database.purchases.findOne({
       user_id: new ObjectId(user_id),
       product_id: new ObjectId(product_id),
       status: PurchaseStatus.IN_CART
     })
+
+    const total_buy_count = purchaseInDb ? purchaseInDb.buy_count + buy_count : buy_count
+    if (total_buy_count > product.quantity) {
+      throw new ErrorWithStatus({ 
+        message: `Sản phẩm trong kho chỉ còn ${product.quantity} cái`, 
+        status: HTTP_STATUS.UNPROCESSABLE_ENTITY 
+      })
+    }
 
     if (purchaseInDb) {
       const result = await database.purchases.findOneAndUpdate(
@@ -70,6 +84,19 @@ class PurchaseServices {
   }
 
   async updatePurchase(purchase_id: string, buy_count: number) {
+    const purchase = await database.purchases.findOne({ _id: new ObjectId(purchase_id), status: PurchaseStatus.IN_CART })
+    if (!purchase) throw new ErrorWithStatus({ message: 'Đơn hàng không tồn tại', status: HTTP_STATUS.NOT_FOUND })
+    
+    const product = await database.products.findOne({ _id: purchase.product_id })
+    if (!product) throw new ErrorWithStatus({ message: 'Sản phẩm không tồn tại', status: HTTP_STATUS.NOT_FOUND })
+    
+    if (buy_count > product.quantity) {
+      throw new ErrorWithStatus({ 
+        message: `Sản phẩm trong kho chỉ còn ${product.quantity} cái`, 
+        status: HTTP_STATUS.UNPROCESSABLE_ENTITY 
+      })
+    }
+
     const result = await database.purchases.findOneAndUpdate(
       { _id: new ObjectId(purchase_id), status: PurchaseStatus.IN_CART },
       {
