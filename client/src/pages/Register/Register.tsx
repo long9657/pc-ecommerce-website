@@ -30,7 +30,7 @@ export default function Register() {
     registerAccountMutation.mutate(body, {
       onSuccess: () => {
         toast.success('Đăng ký tài khoản thành công')
-        navigate('/login')
+        navigate('/')
       },
       onError: (error) => {
         if (isAxiosUnprocessableEntityError<any>(error)) {

@@ -4,7 +4,8 @@ import { getProductDetail } from '../../api/product.api'
 import { addToCart } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
 
-import { getIdFromNameId } from '../../utils/utils'
+import { formatVND, getIdFromNameId } from '../../utils/utils'
+import ProductImage from '../../components/ProductImage'
 
 export default function ProductDetail() {
     const { categorySlug, productSlug } = useParams()
@@ -67,8 +68,10 @@ export default function ProductDetail() {
             
             <div className='flex flex-col gap-4'>
             <div className='aspect-square rounded-2xl bg-slate-50 border border-slate-100/60 p-8 flex items-center justify-center overflow-hidden relative group'>
-                <img 
-                src={product.image} 
+                <ProductImage
+                src={product.image}
+                images={product.images}
+                productName={product.name}
                 alt={product.name}
                 className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out'
                 />
@@ -105,11 +108,11 @@ export default function ProductDetail() {
                 <span className='text-xs font-semibold text-slate-400 block mb-1'>Giá bán chính thức</span>
                 <div className='flex items-baseline gap-3 flex-wrap'>
                     <span className='text-3xl font-black text-rose-600'>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                    {formatVND(product.price)}
                     </span>
-                    {product.price_before_discount && (
+                    {product.price_before_discount > product.price && (
                     <span className='text-base line-through text-slate-400 font-semibold'>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                        {formatVND(product.price_before_discount)}
                     </span>
                     )}
                 </div>

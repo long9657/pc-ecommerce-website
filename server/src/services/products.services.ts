@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb'
 import Product from '~/models/schemas/Product.schema'
 import database from './database.services'
+import { normalizeProductImages } from '~/utils/image'
 
 class ProductServices {
   async createProduct(payload: any) {
@@ -52,7 +53,7 @@ class ProductServices {
     ])
 
     return {
-      products,
+      products: products.map((p) => normalizeProductImages(p)),
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -74,7 +75,7 @@ class ProductServices {
       { $inc: { view: 1 } },
       { returnDocument: 'after' }
     )
-    return product
+    return product ? normalizeProductImages(product) : product
   }
 
   async updateProduct(id: string, payload: any) {

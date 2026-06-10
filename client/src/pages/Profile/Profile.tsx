@@ -1,90 +1,90 @@
-import {useEffect, useState} from 'react'
-import {toast} from 'react-toastify'
+import { useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
 import { getMe, updateMe } from '../../api/auth.api'
 
 interface UserProfile {
-    name: string
-    email: string
-    phone?: string
-    address?: string
+  name: string
+  email: string
+  phone?: string
+  address?: string
 }
 
 export default function Profile() {
-    const [profile, setProfile] = useState<UserProfile>({
-        name: '',
-        email: '',
-        phone: '',
-        address: ''
+  const [profile, setProfile] = useState<UserProfile>({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
+  })
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    getMe()
+      .then((res) => {
+        const data = res.data.result
+        if (data) {
+          const newProfile = {
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            address: data.address || ''
+          }
+          setProfile(newProfile)
+          localStorage.setItem('profile', JSON.stringify(newProfile))
+        }
+      })
+      .catch(() => {
+        const profileStr = localStorage.getItem('profile')
+        if (profileStr) {
+          try {
+            const data = JSON.parse(profileStr)
+            setProfile({
+              name: data.name || '',
+              email: data.email || '',
+              phone: data.phone || '',
+              address: data.address || ''
+            })
+          } catch {
+            // ignore
+          }
+        }
+      })
+  }, [])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setProfile((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSaving(true)
+    updateMe({
+      name: profile.name,
+      phone: profile.phone,
+      address: profile.address
     })
+      .then((res) => {
+        const data = res.data.result
+        if (data) {
+          const updatedProfile = {
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            address: data.address || ''
+          }
+          setProfile(updatedProfile)
+          localStorage.setItem('profile', JSON.stringify(updatedProfile))
+          toast.success('Cập nhật thông tin thành công')
+        }
+      })
+      .catch(() => {
+        toast.error('Cập nhật thông tin thất bại!')
+      })
+      .finally(() => setIsSaving(false))
+  }
 
-    useEffect(() => {
-        getMe()
-            .then((res: any) => {
-                const data = res.data.result
-                if (data) {
-                    const newProfile = {
-                        name: data.name || '',
-                        email: data.email || '',
-                        phone: data.phone || '0123456789',
-                        address: data.address || 'Km 10 Nguyễn Trãi, Hà Đông, Hà Nội'
-                    }
-                    setProfile(newProfile)
-                    localStorage.setItem('profile', JSON.stringify(newProfile))
-                    window.dispatchEvent(new Event('storage'))
-                }
-            })
-            .catch((err) => {
-                console.error('Lỗi lấy thông tin cá nhân:', err)
-                // Fallback to localStorage if API fails
-                const profileStr = localStorage.getItem('profile')
-                if (profileStr) {
-                    try {
-                        const data = JSON.parse(profileStr)
-                        setProfile({
-                            name: data.name || '',
-                            email: data.email || '',
-                            phone: data.phone || '0123456789',
-                            address: data.address || 'Viet Nam'
-                        })
-                    } catch (e) {
-                        console.log(e)
-                    }
-                }
-            })
-    },[])
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target
-        setProfile((prev) => ({ ...prev, [name]: value }))
-    }
-    const handleSave = (e: React.FormEvent) => {
-        e.preventDefault()
-        updateMe({
-            name: profile.name,
-            phone: profile.phone,
-            address: profile.address
-        })
-        .then((res: any) => {
-            const data = res.data.result
-            if (data) {
-                const updatedProfile = {
-                    name: data.name || '',
-                    email: data.email || '',
-                    phone: data.phone || '0123456789',
-                    address: data.address || 'Viet Nam'
-                }
-                setProfile(updatedProfile)
-                localStorage.setItem('profile', JSON.stringify(updatedProfile))
-                window.dispatchEvent(new Event('storage'))
-                toast.success('Cập nhật thông tin thành công')
-            }
-        })
-        .catch((err) => {
-            console.error('Lỗi khi cập nhật profile:', err)
-            toast.error('Cập nhật thông tin thất bại!')
-        })
-    }
-    return (
+  return (
     <div className='max-w-4xl mx-auto px-4 py-8 font-sans'>
       <div className='bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden'>
         <div className='bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white'>
@@ -100,9 +100,6 @@ export default function Profile() {
                   alt='Avatar'
                   className='w-32 h-32 rounded-full object-cover border-4 border-blue-50 shadow-lg'
                 />
-                <div className='absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer'>
-                  <span className='text-xs text-white font-medium'>Đổi ảnh</span>
-                </div>
               </div>
               <div className='text-center'>
                 <h3 className='font-bold text-gray-800 text-lg'>{profile.name || 'Khách hàng'}</h3>
@@ -128,9 +125,8 @@ export default function Profile() {
                     type='email'
                     name='email'
                     value={profile.email}
-                    onChange={handleChange}
-                    className='w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition'
-                    required
+                    disabled
+                    className='w-full border border-gray-100 bg-gray-50 text-gray-500 rounded-lg px-3 py-2 text-sm cursor-not-allowed'
                   />
                 </div>
               </div>
@@ -170,15 +166,17 @@ export default function Profile() {
           <div className='border-t border-gray-100 pt-6 flex justify-end gap-3'>
             <button
               type='button'
+              onClick={() => window.history.back()}
               className='px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition cursor-pointer'
             >
               Hủy
             </button>
             <button
               type='submit'
-              className='px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-sm shadow-blue-200 transition cursor-pointer'
+              disabled={isSaving}
+              className='px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-sm shadow-blue-200 transition cursor-pointer disabled:opacity-60'
             >
-              Lưu thay đổi
+              {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>
         </form>

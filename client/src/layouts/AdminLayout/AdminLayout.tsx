@@ -2,6 +2,8 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import Popover from '../../components/Popover'
+import { logoutAccount } from '../../api/auth.api'
+import { clearLS } from '../../utils/auth'
 
 const ADMIN_MENUS = [
   { path: '/admin', label: 'Dashboard', icon: '📊' },
@@ -35,10 +37,13 @@ export default function AdminLayout() {
     }
   }, [navigate])
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('profile')
-    window.dispatchEvent(new Event('clearLS'))
+  const handleLogout = async () => {
+    try {
+      await logoutAccount()
+    } catch {
+      // ignore
+    }
+    clearLS()
     toast.success('Đăng xuất thành công')
     navigate('/')
   }

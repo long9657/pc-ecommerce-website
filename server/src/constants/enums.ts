@@ -13,3 +13,11 @@ export enum UserRole {
   Admin,
   User
 }
+
+export enum PurchaseStatus {
+  IN_CART = 0,
+  WAIT_FOR_CONFIRMATION = 1,
+  IN_PROGRESS = 2,
+  DELIVERED = 3,
+  CANCELLED = 4
+}

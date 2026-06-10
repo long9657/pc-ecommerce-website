@@ -5,7 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { loginSchema } from '../../utils/rules'
 import Input from '../../components/Input'
 import { useMutation } from '@tanstack/react-query'
-import { LoginAccount } from '../../api/auth.api'
+import { LoginAccount, getMe } from '../../api/auth.api'
 import { toast } from 'react-toastify'
 import { isAxiosUnprocessableEntityError } from '../../utils/utils'
 
@@ -29,7 +29,13 @@ export default function Login() {
   const onSubmit = handleSubmit((data) => {
     const body = data
     LoginAccountMutation.mutate(body, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        try {
+          const res = await getMe()
+          localStorage.setItem('profile', JSON.stringify(res.data.result))
+        } catch {
+          // ignore
+        }
         toast.success('Đăng nhập thành công')
         navigate('/')
       },

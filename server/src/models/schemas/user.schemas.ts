@@ -20,6 +20,8 @@ interface UserType {
   avatar?: string
   cover_photo?: string
   roles?: UserRole[]
+  phone?: string
+  address?: string
 }
 export default class User {
   _id?: ObjectId
@@ -40,6 +42,8 @@ export default class User {
   avatar: string // optional
   cover_photo: string // optional
   roles: UserRole[]
+  phone: string
+  address: string
   constructor(user: UserType) {
     const date = new Date()
     this._id = user._id
@@ -60,5 +64,7 @@ export default class User {
     this.avatar = user.avatar || ''
     this.cover_photo = user.cover_photo || ''
     this.roles = user.roles || [UserRole.User]
+    this.phone = user.phone || ''
+    this.address = user.address || ''
   }
 }

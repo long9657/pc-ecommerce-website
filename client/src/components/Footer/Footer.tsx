@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getCategories } from '../../api/category.api'
-import { generateNameId } from '../../utils/utils'
+import { getCategoryLink } from '../../utils/utils'
 
 export default function Footer() {
   const [isOpen, setIsOpen] = useState(false)
@@ -14,17 +14,22 @@ export default function Footer() {
   })
   const categories = categoriesData?.data?.result || []
 
-  // Helper to resolve category ID and search keyword dynamically
-  const getCategoryLink = (pattern: string, keyword?: string) => {
-    const found = categories.find((cat: any) =>
-      cat.name.toLowerCase().includes(pattern.toLowerCase())
+  const findCategory = (pattern: string) => {
+    const normalized = pattern.toLowerCase()
+    return categories.find(
+      (cat: { name: string; slug?: string }) =>
+        cat.name.toLowerCase().includes(normalized) ||
+        (cat.slug || '').includes(normalized.replace(/\s+/g, '-'))
     )
+  }
+
+  const buildLink = (categoryPattern: string, searchKeyword?: string) => {
+    const found = findCategory(categoryPattern)
     if (found) {
-      let path = `/products?category=${generateNameId({ name: found.name, id: found._id })}`
-      if (keyword) {
-        path += `&search=${encodeURIComponent(keyword)}`
-      }
-      return path
+      return getCategoryLink(found, searchKeyword?.split('|')[0])
+    }
+    if (searchKeyword) {
+      return `/products?search=${encodeURIComponent(searchKeyword.split('|')[0])}`
     }
     return '/products'
   }
@@ -70,7 +75,7 @@ export default function Footer() {
                 { name: 'About Zip', link: '/contact', isPlaceholder: true },
                 { name: 'Privacy Policy', link: '/contact', isPlaceholder: true },
                 { name: 'Search', link: '/products' },
-                { name: 'Terms', link: '/contact', isPlaceholder: true },
+                { name: 'Terms', link: '/faq', isPlaceholder: true },
                 { name: 'Orders and Returns', link: '/bills' },
                 { name: 'Contact Us', link: '/contact' },
                 { name: 'FAQ', link: '/faq' },
@@ -87,10 +92,7 @@ export default function Footer() {
                       {item.name}
                     </a>
                   ) : (
-                    <Link
-                      to={item.link}
-                      className='hover:text-white transition-colors'
-                    >
+                    <Link to={item.link} className='hover:text-white transition-colors'>
                       {item.name}
                     </Link>
                   )}
@@ -100,28 +102,25 @@ export default function Footer() {
           </div>
 
           <div>
-            <Link to={getCategoryLink('Linh Kiện')}>
+            <Link to={buildLink('linh kiện')}>
               <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>PC Parts</h3>
             </Link>
             <ul className='space-y-2 text-sm'>
               {[
                 { name: 'CPUs', keyword: 'CPU' },
-                { name: 'Add On Cards', keyword: 'Card|Adapter' },
-                { name: 'Hard Drives (Internal)', keyword: 'SSD|HDD' },
-                { name: 'Graphic Cards', keyword: 'RTX|GTX|Card Màn Hình' },
-                { name: 'Keyboards / Mice', isAcc: true },
-                { name: 'Cases / Power Supplies / Cooling', keyword: 'Thor|Power|Case|Cooling' },
-                { name: 'RAM (Memory)', keyword: 'Ram|Memory' },
-                { name: 'Software', keyword: 'Software|Windows|Office' },
-                { name: 'Speakers / Headsets', isAcc: true },
-                { name: 'Motherboards', keyword: 'Mainboard|Motherboard|Main' }
+                { name: 'Add On Cards', keyword: 'Card' },
+                { name: 'Hard Drives (Internal)', keyword: 'SSD' },
+                { name: 'Graphic Cards', keyword: 'RTX' },
+                { name: 'Keyboards / Mice', category: 'phụ kiện' },
+                { name: 'Cases / Power Supplies / Cooling', keyword: 'Case' },
+                { name: 'RAM (Memory)', keyword: 'Ram' },
+                { name: 'Software', keyword: 'Windows' },
+                { name: 'Speakers / Headsets', category: 'phụ kiện' },
+                { name: 'Motherboards', keyword: 'Mainboard' }
               ].map((item) => {
-                let link = ''
-                if (item.isAcc) {
-                  link = getCategoryLink('Phụ Kiện')
-                } else {
-                  link = getCategoryLink('Linh Kiện', item.keyword)
-                }
+                const link = item.category
+                  ? buildLink(item.category)
+                  : buildLink('linh kiện', item.keyword)
                 return (
                   <li key={item.name}>
                     <Link to={link} className='hover:text-white transition-colors'>
@@ -134,52 +133,46 @@ export default function Footer() {
           </div>
 
           <div>
-            <Link to={getCategoryLink('PC')}>
+            <Link to={buildLink('pc')}>
               <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Desktop PCs</h3>
             </Link>
             <ul className='space-y-2 text-sm'>
               {[
-                { name: 'Custom PCs', keyword: 'Gaming|Custom' },
-                { name: 'Servers', keyword: 'Xeon|Server' },
-                { name: 'MSI All-In-One PCs', keyword: 'AIO|All-In-One|MSI' },
-                { name: 'HP/Compaq PCs', keyword: 'HP|Compaq' },
+                { name: 'Custom PCs', keyword: 'Gaming' },
+                { name: 'Servers', keyword: 'Server' },
+                { name: 'MSI All-In-One PCs', keyword: 'AIO' },
+                { name: 'HP/Compaq PCs', keyword: 'HP' },
                 { name: 'ASUS PCs', keyword: 'ASUS' },
                 { name: 'Tecs PCs', keyword: 'Tecs' }
-              ].map((item) => {
-                const link = getCategoryLink('PC', item.keyword)
-                return (
-                  <li key={item.name}>
-                    <Link to={link} className='hover:text-white transition-colors'>
-                      {item.name}
-                    </Link>
-                  </li>
-                )
-              })}
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link to={buildLink('pc', item.keyword)} className='hover:text-white transition-colors'>
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <Link to={getCategoryLink('Laptop')}>
+            <Link to={buildLink('laptop')}>
               <h3 className='text-white text-sm font-semibold mb-4 hover:text-blue-400 transition-colors'>Laptops</h3>
             </Link>
             <ul className='space-y-2 text-sm'>
               {[
-                { name: 'Everyday Use Notebooks', keyword: 'XPS|Dell|Everyday' },
-                { name: 'MSI Workstation Series', keyword: 'MacBook Pro|Workstation' },
-                { name: 'MSI Prestige Series', keyword: 'Prestige|MSI' },
-                { name: 'Tablets and Pads', keyword: 'Tablet|Pad|iPad' },
+                { name: 'Everyday Use Notebooks', keyword: 'Dell' },
+                { name: 'MSI Workstation Series', keyword: 'Workstation' },
+                { name: 'MSI Prestige Series', keyword: 'Prestige' },
+                { name: 'Tablets and Pads', keyword: 'Tablet' },
                 { name: 'Netbooks', keyword: 'Netbook' },
-                { name: 'Infinity Gaming Notebooks', keyword: 'Legion|Strix|Gaming' }
-              ].map((item) => {
-                const link = getCategoryLink('Laptop', item.keyword)
-                return (
-                  <li key={item.name}>
-                    <Link to={link} className='hover:text-white transition-colors'>
-                      {item.name}
-                    </Link>
-                  </li>
-                )
-              })}
+                { name: 'Infinity Gaming Notebooks', keyword: 'Gaming' }
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link to={buildLink('laptop', item.keyword)} className='hover:text-white transition-colors'>
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -216,7 +209,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Premium Glassmorphic Notification Modal */}
       {isOpen && (
         <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md transition-opacity duration-300'>
           <div className='bg-white/95 rounded-2xl p-7 max-w-sm w-full mx-4 shadow-2xl border border-white/20 text-center transform scale-100 transition-all'>

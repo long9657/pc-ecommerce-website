@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import http from '../../../utils/http'
 import { toast } from 'react-toastify'
 import { useState } from 'react'
+import { formatVND, resolveImageUrl } from '../../../utils/utils'
 
 export default function ProductsAdmin() {
   const queryClient = useQueryClient()
@@ -91,8 +92,6 @@ export default function ProductsAdmin() {
     saveMutation.mutate(formData)
   }
 
-  const formatPrice = (p: number) => p?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
-
   if (isLoading) return <div className='flex justify-center mt-20'><div className='w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div></div>
 
   return (
@@ -128,10 +127,10 @@ export default function ProductsAdmin() {
               {products.map((product: any) => (
                 <tr key={product._id} className='hover:bg-slate-50 transition-colors'>
                   <td className='p-4 pl-6'>
-                    <img src={product.image} alt={product.name} className='w-12 h-12 object-contain bg-white rounded-md border border-slate-200 p-1'/>
+                    <img src={resolveImageUrl(product.image)} alt={product.name} className='w-12 h-12 object-contain bg-white rounded-md border border-slate-200 p-1' onError={(e) => { (e.target as HTMLImageElement).src = resolveImageUrl() }}/>
                   </td>
                   <td className='p-4 font-bold text-slate-800'>{product.name}</td>
-                  <td className='p-4 text-blue-600 font-bold'>{formatPrice(product.price)}</td>
+                  <td className='p-4 text-blue-600 font-bold'>{formatVND(product.price)}</td>
                   <td className='p-4 text-slate-600 font-medium'>{product.quantity}</td>
                   <td className='p-4 text-slate-600 font-medium'>{product.sold || 0}</td>
                   <td className='p-4 pr-6 text-right space-x-2'>

@@ -1,15 +1,8 @@
 import { ObjectId } from 'mongodb'
 import Purchase from '~/models/schemas/Purchase.schema'
 import Order, { OrderStatus, PaymentMethod, PaymentStatus } from '~/models/schemas/Order.schema'
+import { PurchaseStatus } from '~/constants/enums'
 import database from './database.services'
-
-export enum PurchaseStatus {
-  IN_CART = 0,
-  WAIT_FOR_CONFIRMATION = 1,
-  IN_PROGRESS = 2,
-  DELIVERED = 3,
-  CANCELLED = 4
-}
 
 class PurchaseServices {
   async addToCart(user_id: string, payload: { product_id: string; buy_count: number }) {

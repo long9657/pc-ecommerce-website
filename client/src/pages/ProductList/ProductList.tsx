@@ -2,7 +2,8 @@ import { Link, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
 import { getCategories } from '../../api/category.api'
-import { generateNameId } from '../../utils/utils'
+import { formatVND, getProductLink } from '../../utils/utils'
+import ProductImage from '../../components/ProductImage'
 
 const MOCK_HERO_SLIDES = [
   {
@@ -59,6 +60,7 @@ export default function ProductList() {
             </p>
 
             <button
+              onClick={() => navigate('/products')}
               className='mt-6 px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer duration-300'
               style={{
                 backgroundColor: MOCK_HERO_SLIDES[currentHeroSlide].themeColor,
@@ -81,7 +83,7 @@ export default function ProductList() {
         <div className='grid grid-cols-2 md:grid-cols-5 gap-6 mt-6'>
           <div
             onClick={() => navigate('/products')}
-            className={`border rounded-2xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-md bg-white border-slate-200/60 text-slate-800`}
+            className='border rounded-2xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-md bg-white border-slate-200/60 text-slate-800'
           >
             <div className='w-12 h-12 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center text-xl mx-auto shadow-sm'>
               📦
@@ -89,21 +91,23 @@ export default function ProductList() {
             <h3 className='font-bold text-xs mt-3 uppercase tracking-wider'>Tất cả</h3>
           </div>
 
-          {categories.map((cat: any, idx: number) => {
-            return (
-              <div
-                key={idx}
-                onClick={() => navigate(`/products?category=${generateNameId({ name: cat.name, id: cat._id })}`)}
-                className={`border rounded-2xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-md bg-white border-slate-200/60 text-slate-800`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto shadow-md overflow-hidden bg-white`}>
-                  <img src={cat.image} className="w-full h-full object-cover" alt={cat.name} />
-                </div>
-
-                <h3 className='font-bold text-xs mt-3 uppercase tracking-wider'>{cat.name}</h3>
+          {categories.map((cat: { _id: string; name: string; slug?: string; image?: string }) => (
+            <div
+              key={cat._id}
+              onClick={() => navigate(cat.slug ? `/${cat.slug}` : '/products')}
+              className='border rounded-2xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-md bg-white border-slate-200/60 text-slate-800'
+            >
+              <div className='w-12 h-12 rounded-xl flex items-center justify-center mx-auto shadow-md overflow-hidden bg-white'>
+                <ProductImage
+                  src={cat.image}
+                  productName={cat.name}
+                  className='w-full h-full object-cover'
+                  alt={cat.name}
+                />
               </div>
-            )
-          })}
+              <h3 className='font-bold text-xs mt-3 uppercase tracking-wider'>{cat.name}</h3>
+            </div>
+          ))}
         </div>
 
         <div className='mt-12 space-y-16'>
@@ -116,10 +120,10 @@ export default function ProductList() {
 
             <div className='flex flex-col lg:flex-row gap-6'>
               <div className='flex-1 grid grid-cols-2 md:grid-cols-5 gap-4'>
-                {products.map((product: any) => (
+                {products.map((product: { _id: string; name: string; slug?: string; category_id?: string; quantity: number; image?: string; images?: string[]; rating?: number; sold?: number; price: number; price_before_discount?: number }) => (
                   <Link
                     key={product._id}
-                    to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                    to={getProductLink(product, categories)}
                     className='bg-white rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-100/80 group block text-inherit no-underline'
                   >
                     <div>
@@ -131,8 +135,10 @@ export default function ProductList() {
                       </div>
 
                       <div className='h-32 my-4 flex items-center justify-center overflow-hidden bg-slate-50 rounded-lg p-2'>
-                        <img
+                        <ProductImage
                           src={product.image}
+                          images={product.images}
+                          productName={product.name}
                           alt={product.name}
                           className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300'
                         />
@@ -161,13 +167,13 @@ export default function ProductList() {
                     </div>
 
                     <div className='mt-4 pt-2 border-t border-slate-50'>
-                      {product.price_before_discount && (
+                      {(product.price_before_discount || 0) > product.price && (
                         <span className='text-[10px] line-through text-slate-400 block'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                          {formatVND(product.price_before_discount || 0)}
                         </span>
                       )}
                       <div className='text-sm font-black text-rose-600'>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                        {formatVND(product.price)}
                       </div>
                     </div>
                   </Link>
@@ -178,5 +184,5 @@ export default function ProductList() {
         </div>
       </div>
     </div>
-  );
+  )
 }

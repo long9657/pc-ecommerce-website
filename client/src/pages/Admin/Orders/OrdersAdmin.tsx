@@ -1,25 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import http from '../../../utils/http'
 import { toast } from 'react-toastify'
+import { formatVND, resolveImageUrl } from '../../../utils/utils'
 
 const STATUS_LABELS: Record<number, { label: string; bg: string; text: string; dot: string }> = {
   1: { label: 'Chờ xác nhận', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
   2: { label: 'Đang xử lý', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500' },
-  3: { label: 'Đã giao', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  4: { label: 'Đã hủy', bg: 'bg-rose-50', text: 'text-rose-700', dot: 'bg-rose-500' }
+  3: { label: 'Đang giao', bg: 'bg-indigo-50', text: 'text-indigo-700', dot: 'bg-indigo-500' },
+  4: { label: 'Đã giao', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  5: { label: 'Đã hủy', bg: 'bg-rose-50', text: 'text-rose-700', dot: 'bg-rose-500' }
 }
 
 const STATUS_ACTIONS: Record<number, { next: number; label: string; style: string }[]> = {
   1: [
     { next: 2, label: '✅ Xác nhận', style: 'bg-blue-600 hover:bg-blue-700 text-white' },
-    { next: 4, label: '❌ Hủy đơn', style: 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' }
+    { next: 5, label: '❌ Hủy đơn', style: 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' }
   ],
   2: [
-    { next: 3, label: '🚚 Đã giao', style: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-    { next: 4, label: '❌ Hủy đơn', style: 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' }
+    { next: 3, label: '🚚 Đang giao', style: 'bg-indigo-600 hover:bg-indigo-700 text-white' },
+    { next: 5, label: '❌ Hủy đơn', style: 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' }
   ],
-  3: [],
-  4: []
+  3: [
+    { next: 4, label: '✅ Đã giao', style: 'bg-emerald-600 hover:bg-emerald-700 text-white' }
+  ],
+  4: [],
+  5: []
 }
 
 export default function OrdersAdmin() {
@@ -40,13 +45,10 @@ export default function OrdersAdmin() {
     onError: () => toast.error('Có lỗi xảy ra!')
   })
 
-  const formatPrice = (price: number) =>
-    price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
-
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleString('vi-VN')
 
-  const grouped: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] }
+  const grouped: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] }
   if (data) {
     data.forEach((p: any) => {
       if (grouped[p.status]) grouped[p.status].push(p)
@@ -74,7 +76,7 @@ export default function OrdersAdmin() {
       </div>
 
       {/* Stats Summary */}
-      <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
+      <div className='grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8'>
         {Object.entries(STATUS_LABELS).map(([status, info]) => {
           const count = grouped[Number(status)]?.length || 0
           return (
@@ -91,7 +93,7 @@ export default function OrdersAdmin() {
 
       {/* Orders List */}
       <div className='space-y-8'>
-        {[1, 2, 3, 4].map((status) => {
+        {[1, 2, 3, 4, 5].map((status) => {
           const orders = grouped[status]
           if (orders.length === 0) return null
           const info = STATUS_LABELS[status]
@@ -147,9 +149,10 @@ export default function OrdersAdmin() {
                         {order.purchases?.map((p: any, idx: number) => (
                           <div key={idx} className='flex items-center gap-4 bg-white border border-slate-100 p-3 rounded-xl shadow-sm'>
                             <img
-                              src={p.product?.image}
+                              src={resolveImageUrl(p.product?.image)}
                               alt={p.product?.name}
                               className='w-14 h-14 object-contain rounded-lg bg-slate-50 border border-slate-100 p-1 shrink-0'
+                              onError={(e) => { (e.target as HTMLImageElement).src = resolveImageUrl() }}
                             />
                             <div className='flex-1 min-w-0'>
                               <div className='text-sm font-bold text-slate-800 truncate mb-1'>{p.product?.name}</div>
@@ -159,7 +162,7 @@ export default function OrdersAdmin() {
                               </div>
                             </div>
                             <div className='text-right shrink-0 ml-2'>
-                              <div className='text-sm font-bold text-slate-800'>{formatPrice(p.price)}</div>
+                              <div className='text-sm font-bold text-slate-800'>{formatVND(p.price)}</div>
                             </div>
                           </div>
                         ))}
@@ -170,7 +173,7 @@ export default function OrdersAdmin() {
                     <div className='shrink-0 flex flex-row xl:flex-col items-center xl:items-end justify-between xl:justify-center gap-4 border-t xl:border-t-0 xl:border-l border-slate-100 pt-4 xl:pt-0 xl:pl-6 min-w-[200px]'>
                       <div className='text-left xl:text-right'>
                         <div className='text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1'>Tổng thanh toán</div>
-                        <div className='text-xl font-black text-rose-600'>{formatPrice(order.final_price)}</div>
+                        <div className='text-xl font-black text-rose-600'>{formatVND(order.final_price)}</div>
                       </div>
                       
                       <div className='flex gap-2 flex-wrap justify-end'>

@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOrders, cancelOrder } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
+import { formatVND, resolveImageUrl } from '../../utils/utils'
 
 const tabs = [
   { id: 'all', name: 'Tất cả', status: -1 },
   { id: 'wait', name: 'Chờ xác nhận', status: 1 },
   { id: 'progress', name: 'Đang xử lý', status: 2 },
-  { id: 'delivered', name: 'Đã giao', status: 3 },
-  { id: 'cancelled', name: 'Đã hủy', status: 4 }
+  { id: 'shipping', name: 'Đang giao', status: 3 },
+  { id: 'delivered', name: 'Đã giao', status: 4 },
+  { id: 'cancelled', name: 'Đã hủy', status: 5 }
 ]
 
 export default function Orders() {
@@ -41,8 +43,9 @@ export default function Orders() {
     switch (status) {
       case 1: return { text: 'CHỜ XÁC NHẬN', color: 'text-orange-500' }
       case 2: return { text: 'ĐANG XỬ LÝ', color: 'text-blue-500' }
-      case 3: return { text: 'ĐÃ GIAO HÀNG', color: 'text-green-500' }
-      case 4: return { text: 'ĐÃ HỦY', color: 'text-red-500' }
+      case 3: return { text: 'ĐANG GIAO', color: 'text-indigo-500' }
+      case 4: return { text: 'ĐÃ GIAO HÀNG', color: 'text-green-500' }
+      case 5: return { text: 'ĐÃ HỦY', color: 'text-red-500' }
       default: return { text: 'KHÔNG XÁC ĐỊNH', color: 'text-gray-500' }
     }
   }
@@ -108,7 +111,7 @@ export default function Orders() {
                   <div className='flex flex-col border-b border-gray-100'>
                     {order.purchases?.map((item: any) => (
                       <div key={item._id} className='p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start border-b last:border-0 border-gray-100'>
-                        <img src={item.product?.image} className='w-24 h-24 object-contain rounded-lg bg-gray-50 border border-gray-100' alt={item.product?.name} />
+                        <img src={resolveImageUrl(item.product?.image)} className='w-24 h-24 object-contain rounded-lg bg-gray-50 border border-gray-100' alt={item.product?.name} onError={(e) => { (e.target as HTMLImageElement).src = resolveImageUrl() }} />
                         <div className='flex-1 text-center sm:text-left w-full'>
                           <h4 className='font-bold text-gray-800 text-lg line-clamp-2'>{item.product?.name}</h4>
                           <div className='mt-2 text-gray-500 text-sm flex flex-col sm:flex-row gap-2 sm:gap-6'>
@@ -117,11 +120,13 @@ export default function Orders() {
                           </div>
                         </div>
                         <div className='text-right'>
-                          <span className='text-gray-500 line-through text-sm mr-2'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * 1.2)}
-                          </span>
+                          {(item.product?.price_before_discount || 0) > item.price && (
+                            <span className='text-gray-500 line-through text-sm mr-2 block'>
+                              {formatVND(item.product.price_before_discount)}
+                            </span>
+                          )}
                           <span className='font-bold text-rose-600 text-lg whitespace-nowrap block mt-1'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                            {formatVND(item.price)}
                           </span>
                         </div>
                       </div>
@@ -137,7 +142,7 @@ export default function Orders() {
                       <div className='text-right'>
                         <span className='text-gray-600 text-sm mr-2'>Tổng cộng:</span>
                         <span className='text-xl font-black text-rose-600'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.final_price)}
+                          {formatVND(order.final_price)}
                         </span>
                       </div>
                       
@@ -154,7 +159,7 @@ export default function Orders() {
                           Hủy đơn
                         </button>
                       )}
-                      {(order.status === 3 || order.status === 4) && (
+                      {(order.status === 4 || order.status === 5) && (
                         <button 
                           className='px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md shadow-blue-200'
                         >

@@ -214,6 +214,30 @@ export const refreshTokenValidator = validate(
   )
 )
 
+export const updateMeValidator = validate(
+  checkSchema(
+    {
+      name: {
+        optional: true,
+        isString: { errorMessage: USERS_MESSAGES.NAME_MUST_BE_A_STRING },
+        trim: true,
+        isLength: { options: { min: 1, max: 100 }, errorMessage: USERS_MESSAGES.NAME_LENGTH_MUST_BE_FROM_1_TO_100 }
+      },
+      phone: {
+        optional: true,
+        isString: true,
+        trim: true
+      },
+      address: {
+        optional: true,
+        isString: true,
+        trim: true
+      }
+    },
+    ['body']
+  )
+)
+
 export const isAdminValidator = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user_id = req.decoded_authorization.user_id

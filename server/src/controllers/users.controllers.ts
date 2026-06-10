@@ -55,6 +55,15 @@ export const getMeController = async (req: Request, res: Response) => {
   })
 }
 
+export const updateMeController = async (req: Request, res: Response) => {
+  const user_id = req.decoded_authorization.user_id
+  const result = await userServices.updateMe(user_id, req.body)
+  return res.json({
+    message: USERS_MESSAGES.UPDATE_ME_SUCCESS,
+    result
+  })
+}
+
 export const getAllUsersAdminController = async (req: Request, res: Response) => {
   const result = await userServices.getAllUsersAdmin()
   return res.json({

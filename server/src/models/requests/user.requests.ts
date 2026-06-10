@@ -5,3 +5,9 @@ export interface RegisterReqBody {
   confirm_password: string
   date_of_birth: string
 }
+
+export interface UpdateMeReqBody {
+  name?: string
+  phone?: string
+  address?: string
+}

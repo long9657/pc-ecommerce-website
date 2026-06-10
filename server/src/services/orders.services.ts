@@ -1,7 +1,23 @@
 import { ObjectId } from 'mongodb'
 import database from './database.services'
 import { OrderStatus } from '~/models/schemas/Order.schema'
-import { PurchaseStatus } from '~/models/schemas/Purchase.schema'
+import { PurchaseStatus } from '~/constants/enums'
+
+function mapOrderStatusToPurchaseStatus(orderStatus: number): number {
+  switch (orderStatus) {
+    case OrderStatus.PENDING:
+      return PurchaseStatus.WAIT_FOR_CONFIRMATION
+    case OrderStatus.PROCESSING:
+    case OrderStatus.SHIPPING:
+      return PurchaseStatus.IN_PROGRESS
+    case OrderStatus.DELIVERED:
+      return PurchaseStatus.DELIVERED
+    case OrderStatus.CANCELLED:
+      return PurchaseStatus.CANCELLED
+    default:
+      return PurchaseStatus.WAIT_FOR_CONFIRMATION
+  }
+}
 
 class OrderServices {
   async getOrdersByUser(user_id: string, status?: number) {
@@ -104,17 +120,17 @@ class OrderServices {
 
   async updateOrderStatusAdmin(order_id: string, status: number) {
     const orderIdObj = new ObjectId(order_id)
-    
+    const purchaseStatus = mapOrderStatusToPurchaseStatus(status)
+
     const result = await database.orders.findOneAndUpdate(
       { _id: orderIdObj },
       { $set: { status, updated_at: new Date() } },
       { returnDocument: 'after' }
     )
 
-    // Sync status to purchases
     await database.purchases.updateMany(
       { order_id: orderIdObj },
-      { $set: { status, updated_at: new Date() } }
+      { $set: { status: purchaseStatus, updated_at: new Date() } }
     )
 
     return result

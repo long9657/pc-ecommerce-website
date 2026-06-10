@@ -28,5 +28,6 @@ export const USERS_MESSAGES = {
   REFRESH_TOKEN_IS_INVALID: 'Refresh token is invalid',
   LOGOUT_SUCCESS: 'Logout success',
   REFRESH_TOKEN_SUCCESS: 'Refresh token success',
-  GET_ME_SUCCESS: 'Get me success'
+  GET_ME_SUCCESS: 'Get me success',
+  UPDATE_ME_SUCCESS: 'Cập nhật thông tin thành công'
 } as const

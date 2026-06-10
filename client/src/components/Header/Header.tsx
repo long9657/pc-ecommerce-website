@@ -1,5 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router'
-import { generateNameId } from '../../utils/utils'
+import { getCategoryLink } from '../../utils/utils'
+import { logoutAccount } from '../../api/auth.api'
+import { clearLS } from '../../utils/auth'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import Popover from '../Popover'
@@ -85,11 +87,16 @@ function Header() {
   })
   const cartItemsCount = cartData?.data?.result?.length || 0
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('profile')
+  const handleLogout = async () => {
+    try {
+      await logoutAccount()
+    } catch {
+      // ignore
+    }
+    clearLS()
     setIsAuthenticated(false)
     setUsername('')
+    setIsAdmin(false)
     toast.success('Đăng xuất thành công')
     navigate('/')
   }
@@ -106,8 +113,6 @@ function Header() {
             <span className='font-bold text-white'>9:00 AM - 5:30 PM</span>
             <svg className='w-2.5 h-2.5 text-slate-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M19 9l-7 7-7-7' />
-              <span className='text-slate-400'>Mon-Thu:</span>
-              <span className='font-bold text-white'>9:00 AM - 5:30 PM</span>
             </svg>
           </div>
 
@@ -127,9 +132,12 @@ function Header() {
             </Link>
 
           <nav className='hidden lg:flex items-center gap-6 text-sm font-medium text-gray-700 font-sans select-none'>
-            {categories.slice(0, 4).map((cat: any) => (
-              <Link key={cat._id} to={`/products?category=${generateNameId({ name: cat.name, id: cat._id })}`}
- className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'>
+            {categories.slice(0, 4).map((cat: { _id: string; name: string; slug?: string }) => (
+              <Link
+                key={cat._id}
+                to={cat.slug ? `/${cat.slug}` : '/products'}
+                className='hover:text-blue-600 transition-colors uppercase text-xs font-bold'
+              >
                 {cat.name}
               </Link>
             ))}

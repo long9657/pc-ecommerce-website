@@ -5,7 +5,8 @@ import { getProducts } from '../../api/product.api'
 import { getCategories } from '../../api/category.api'
 import { addToCart } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
-import { generateNameId, getIdFromNameId } from '../../utils/utils'
+import { formatVND, formatVNDCompact, generateNameId, getIdFromNameId, getProductLink } from '../../utils/utils'
+import ProductImage from '../../components/ProductImage'
 
 
 export default function Products() {
@@ -15,9 +16,6 @@ export default function Products() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const queryClient = useQueryClient()
 
-  // 1. Get filters from URL Search Params
-  const categoryFilter = searchParams.get('category') || 'All'
-  const categoryId = categoryFilter !== 'All' ? getIdFromNameId(categoryFilter) : 'All'
   const minPrice = searchParams.get('minPrice') || ''
   const maxPrice = searchParams.get('maxPrice') || ''
   const sortBy = searchParams.get('sort') || 'newest'
@@ -30,7 +28,12 @@ export default function Products() {
     max: maxPrice
   })
 
-  // Apply Price Filters
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => getCategories()
+  })
+  const categories = categoriesData?.data?.result || []
+
   const handleApplyPrice = (e: React.FormEvent) => {
     e.preventDefault()
     const newParams = new URLSearchParams(searchParams)
@@ -44,11 +47,14 @@ export default function Products() {
     } else {
       newParams.delete('maxPrice')
     }
-    newParams.set('page', '1') // Reset page on filter change
-    setSearchParams(newParams)
+    newParams.set('page', '1')
+    if (categorySlug) {
+      navigate({ pathname: `/${categorySlug}`, search: newParams.toString() })
+    } else {
+      setSearchParams(newParams)
+    }
   }
 
-  // Update a single filter helper
   const updateFilter = (key: string, value: string) => {
     if (key === 'category') {
       const newParams = new URLSearchParams(searchParams)
@@ -57,7 +63,9 @@ export default function Products() {
       if (value === 'All') {
         navigate({ pathname: '/products', search: newParams.toString() })
       } else {
-        navigate({ pathname: `/${value}`, search: newParams.toString() })
+        const catId = getIdFromNameId(value)
+        const cat = categories.find((c: { _id: string; slug?: string }) => c._id === catId)
+        navigate({ pathname: cat?.slug ? `/${cat.slug}` : '/products', search: newParams.toString() })
       }
       return
     }
@@ -69,9 +77,14 @@ export default function Products() {
       newParams.set(key, value)
     }
     if (key !== 'page') {
-      newParams.set('page', '1') // Reset page on filter change
+      newParams.set('page', '1')
     }
-    setSearchParams(newParams)
+
+    if (categorySlug) {
+      navigate({ pathname: `/${categorySlug}`, search: newParams.toString() })
+    } else {
+      setSearchParams(newParams)
+    }
   }
 
   const clearAllFilters = () => {
@@ -83,24 +96,24 @@ export default function Products() {
     }
   }
 
-  // Fetch Categories
-  const { data: categoriesData } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => getCategories()
-  })
-  const categories = categoriesData?.data?.result || []
+  const activeCategory = useMemo(() => {
+    if (categorySlug) {
+      const bySlug = categories.find((c: { slug?: string }) => c.slug === categorySlug)
+      if (bySlug) return bySlug
+    }
+    const catParam = searchParams.get('category')
+    if (catParam) {
+      const id = getIdFromNameId(catParam)
+      const byId = categories.find((c: { _id: string }) => c._id === id)
+      if (byId) return byId
+    }
+    return null
+  }, [categorySlug, searchParams, categories])
 
-  // Find Category Name for Display
-    const currentCategoryName = useMemo(() => {
-    if (categoryFilter === 'All') return 'Full Hardware Store'
-    const cat = categories.find((c: any) => c._id === categoryId) // Đổi thành categoryId
-    return cat ? cat.name : categoryFilter
-  }, [categoryFilter, categories, categoryId]) // Thêm categoryId vào dependency list
+  const currentCategoryName = activeCategory?.name || 'Full Hardware Store'
 
-
-  // Fetch Products
   const queryConfig = {
-    category: categoryId !== 'All' ? categoryId : undefined,
+    category: activeCategory?._id || undefined,
     search: searchFilter || undefined,
     price_min: minPrice || undefined,
     price_max: maxPrice || undefined,
@@ -143,7 +156,7 @@ export default function Products() {
         <Link to='/' className='hover:text-blue-600 transition'>Home</Link>
         <span>/</span>
         <Link to='/products' className='hover:text-blue-600 transition text-slate-600'>Products</Link>
-        {categoryFilter !== 'All' && (
+        {activeCategory && (
           <>
             <span>/</span>
             <span className='text-slate-900 font-black'>{currentCategoryName}</span>
@@ -171,7 +184,7 @@ export default function Products() {
           <div className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm'>
             <div className='flex items-center justify-between border-b border-slate-100 pb-4 mb-4'>
               <h2 className='text-sm font-extrabold text-slate-800 uppercase tracking-wider'>Filters</h2>
-              {(categoryFilter !== 'All' || minPrice || maxPrice || searchFilter) && (
+              {(activeCategory || minPrice || maxPrice || searchFilter) && (
                 <button
                   onClick={clearAllFilters}
                   className='text-[10px] font-bold text-rose-500 hover:text-rose-600 underline cursor-pointer'
@@ -181,9 +194,9 @@ export default function Products() {
               )}
             </div>
 
-            {(categoryFilter !== 'All' || minPrice || maxPrice || searchFilter) && (
+            {(activeCategory || minPrice || maxPrice || searchFilter) && (
               <div className='flex flex-wrap gap-1.5 mb-6 border-b border-slate-100 pb-4'>
-                {categoryFilter !== 'All' && (
+                {activeCategory && (
                   <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
                     {currentCategoryName}
                     <button onClick={() => updateFilter('category', 'All')} className='hover:text-rose-500 cursor-pointer font-black ml-1'>×</button>
@@ -197,7 +210,7 @@ export default function Products() {
                 )}
                 {(minPrice || maxPrice) && (
                   <span className='inline-flex items-center gap-1 bg-slate-100 text-[10px] font-bold text-slate-600 px-2.5 py-1 rounded-full'>
-                    ${minPrice || '0'} - ${maxPrice || '∞'}
+                    {formatVNDCompact(minPrice || 0)} - {maxPrice ? formatVNDCompact(maxPrice) : '∞'}
                     <button
                       onClick={() => {
                         const newParams = new URLSearchParams(searchParams)
@@ -220,7 +233,7 @@ export default function Products() {
               <div className='space-y-1.5'>
                 <button
                   onClick={() => updateFilter('category', 'All')}
-                  className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${categoryFilter === 'All' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                  className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${!activeCategory ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
                     }`}
                 >
                   <span>All Categories</span>
@@ -229,7 +242,7 @@ export default function Products() {
                   <button
                     key={cat._id}
                     onClick={() => updateFilter('category', generateNameId({ name: cat.name, id: cat._id }))}
-                    className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${categoryFilter === generateNameId({ name: cat.name, id: cat._id }) ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                    className={`w-full flex items-center justify-between text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${activeCategory?._id === cat._id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
                       }`}
                   >
                     <span>{cat.name}</span>
@@ -243,10 +256,10 @@ export default function Products() {
               <form onSubmit={handleApplyPrice} className='space-y-3'>
                 <div className='flex items-center gap-2'>
                   <div className='relative flex-1'>
-                    <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400'>$</span>
+                    <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400'>₫</span>
                     <input
                       type='number'
-                      placeholder='Min'
+                      placeholder='Tối thiểu'
                       value={priceInput.min}
                       onChange={e => setPriceInput(prev => ({ ...prev, min: e.target.value }))}
                       className='w-full bg-slate-50 border border-slate-200/80 rounded-lg py-1.5 pl-5 pr-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white transition'
@@ -254,10 +267,10 @@ export default function Products() {
                   </div>
                   <span className='text-slate-300 font-bold text-xs'>-</span>
                   <div className='relative flex-1'>
-                    <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400'>$</span>
+                    <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400'>₫</span>
                     <input
                       type='number'
-                      placeholder='Max'
+                      placeholder='Tối đa'
                       value={priceInput.max}
                       onChange={e => setPriceInput(prev => ({ ...prev, max: e.target.value }))}
                       className='w-full bg-slate-50 border border-slate-200/80 rounded-lg py-1.5 pl-5 pr-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white transition'
@@ -351,7 +364,7 @@ export default function Products() {
               {products.map((product: any) => {
                 const inStock = product.quantity > 0
                 return (
-                  <Link to={`/product/${generateNameId({ name: product.name, id: product._id })}`}
+                  <Link to={getProductLink(product, categories)}
                     key={product._id}
                     className='bg-white rounded-2xl p-5 flex flex-col justify-between border border-slate-200/60 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden'
                   >
@@ -363,8 +376,10 @@ export default function Products() {
                         </span>
                       </div>
                       <div className='h-40 my-3 flex items-center justify-center bg-slate-50/60 rounded-2xl p-4 overflow-hidden relative border border-slate-100'>
-                        <img
+                        <ProductImage
                           src={product.image}
+                          images={product.images}
+                          productName={product.name}
                           alt={product.name}
                           className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out select-none'
                         />
@@ -393,13 +408,13 @@ export default function Products() {
                     </div>
                     <div className='pt-3 border-t border-slate-100/70 flex items-center justify-between mt-auto'>
                       <div>
-                        {product.price_before_discount && (
+                        {product.price_before_discount > product.price && (
                           <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                            {formatVND(product.price_before_discount)}
                           </span>
                         )}
                         <div className='text-sm font-black text-slate-900 leading-none mt-1'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                          {formatVND(product.price)}
                         </div>
                       </div>
 
@@ -432,13 +447,15 @@ export default function Products() {
                 return (
                   <Link
                     key={product._id}
-                    to={`/${categorySlug || categories.find((c: any) => c._id === product.category_id)?.slug || 'products'}/${product.slug}`}
+                    to={getProductLink(product, categories)}
                     className='bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center gap-6 group relative overflow-hidden text-inherit no-underline block'
                   >
 
                     <div className='w-full sm:w-[180px] h-[140px] bg-slate-50/60 rounded-xl flex items-center justify-center p-4 relative border border-slate-100 flex-shrink-0'>
-                      <img
+                      <ProductImage
                         src={product.image}
+                        images={product.images}
+                        productName={product.name}
                         alt={product.name}
                         className='max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 select-none'
                       />
@@ -483,13 +500,13 @@ export default function Products() {
 
                     <div className='w-full sm:w-[150px] sm:border-l border-slate-100 sm:pl-6 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-4 flex-shrink-0'>
                       <div>
-                        {product.price_before_discount && (
+                        {product.price_before_discount > product.price && (
                           <span className='text-[10px] line-through text-slate-400 block leading-none select-none'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                            {formatVND(product.price_before_discount)}
                           </span>
                         )}
                         <div className='text-base font-black text-slate-900 leading-none mt-1.5'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                          {formatVND(product.price)}
                         </div>
                       </div>
 

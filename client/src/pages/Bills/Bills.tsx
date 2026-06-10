@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPurchases, buyPurchases, deletePurchases, updatePurchase } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
 import { Link } from 'react-router'
+import { formatVND, resolveImageUrl } from '../../utils/utils'
 
 const STATUS_LABELS: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: 'Chờ xác nhận', color: 'text-amber-500 border-amber-500/20 bg-amber-500/5', bg: 'bg-amber-500' },
@@ -154,9 +155,6 @@ export default function Bills() {
     return allHistoryItems.filter((item: any) => item.status === historyFilter)
   }, [allHistoryItems, historyFilter])
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
-
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleString('vi-VN')
 
@@ -278,9 +276,10 @@ export default function Bills() {
                       />
 
                       <img
-                        src={item.product?.image}
+                        src={resolveImageUrl(item.product?.image)}
                         alt={item.product?.name}
                         className='w-16 h-16 object-contain rounded-xl bg-slate-50 border border-slate-100 p-1 flex-shrink-0'
+                        onError={(e) => { (e.target as HTMLImageElement).src = resolveImageUrl() }}
                       />
 
                       <div className='flex-1 min-w-0'>
@@ -288,7 +287,7 @@ export default function Bills() {
                           {item.product?.name}
                         </h4>
                         <span className='font-black text-rose-600 mt-2 block text-sm'>
-                          {formatPrice(item.product?.price)}
+                          {formatVND(item.product?.price)}
                         </span>
                       </div>
 
@@ -355,7 +354,7 @@ export default function Bills() {
                   <div>
                     <span className='text-slate-500 block text-xs font-semibold'>Tổng thanh toán ({selectedCartIds.length} sản phẩm):</span>
                     <span className='text-2xl font-black text-rose-600 block mt-1'>
-                      {formatPrice(totalCartValue)}
+                      {formatVND(totalCartValue)}
                     </span>
                   </div>
                   <button
@@ -412,9 +411,10 @@ export default function Bills() {
                     >
                       <div className='flex gap-4 items-start flex-1 min-w-0'>
                         <img
-                          src={item.product?.image}
+                          src={resolveImageUrl(item.product?.image)}
                           alt={item.product?.name}
                           className='w-14 h-14 object-contain rounded-xl bg-slate-50 border border-slate-100 p-1 flex-shrink-0'
+                          onError={(e) => { (e.target as HTMLImageElement).src = resolveImageUrl() }}
                         />
                         <div className='min-w-0 flex-1'>
                           <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide mb-2 ${info?.color}`}>
@@ -441,7 +441,7 @@ export default function Bills() {
                         <div className='text-right min-w-[120px]'>
                           <span className='text-[9px] text-slate-400 font-bold uppercase tracking-wider block'>Tổng thanh toán</span>
                           <span className='text-sm font-black text-rose-600 block mt-0.5'>
-                            {formatPrice(item.product?.price * item.buy_count)}
+                            {formatVND(item.product?.price * item.buy_count)}
                           </span>
                         </div>
                       </div>
@@ -517,7 +517,7 @@ export default function Bills() {
               <div className="bg-gray-50 p-4 rounded-lg mt-4 flex justify-between items-center border border-gray-100">
                 <span className="font-medium text-gray-600">Tổng thanh toán:</span>
                 <span className="font-bold text-rose-600 text-lg">
-                  {formatPrice(totalCartValue)}
+                  {formatVND(totalCartValue)}
                 </span>
               </div>
 
@@ -561,7 +561,7 @@ export default function Bills() {
 
             <div className='space-y-1 mb-6'>
               <span className='text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block'>Số tiền cần trả</span>
-              <span className='text-xl font-black text-rose-500 block'>{formatPrice(totalCartValue)}</span>
+              <span className='text-xl font-black text-rose-500 block'>{formatVND(totalCartValue)}</span>
               <span className='text-[10px] text-slate-400 font-bold block mt-1.5 bg-slate-100 py-1 px-3 rounded-full inline-block'>
                 Nội dung: PCSTORE THANH TOAN
               </span>

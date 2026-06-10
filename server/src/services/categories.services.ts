@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb'
 import Category from '~/models/schemas/Category.schema'
 import database from './database.services'
+import { resolveProductImage } from '~/utils/image'
 
 class CategoryServices {
   async createCategory(payload: { name: string; image: string }) {
@@ -11,7 +12,10 @@ class CategoryServices {
 
   async getCategories() {
     const categories = await database.categories.find({}).toArray()
-    return categories
+    return categories.map((cat) => ({
+      ...cat,
+      image: resolveProductImage({ name: cat.name, image: cat.image })
+    }))
   }
 
   async updateCategory(id: string, payload: { name?: string; image?: string }) {
