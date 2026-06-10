@@ -13,7 +13,7 @@ class ProductServices {
   }
 
   async getProducts(query: any) {
-    const { page = 1, limit = 20, category, search, sort, price_min, price_max } = query
+    const { page = 1, limit = 20, category, search, sort, price_min, price_max, color } = query
     const match: any = {}
     
     if (category) {
@@ -28,8 +28,13 @@ class ProductServices {
         }
       }
     }
+
     if (search) {
       match.name = { $regex: search, $options: 'i' }
+    }
+    
+    if (color) {
+      match.color = color
     }
     if (price_min || price_max) {
       match.price = {}

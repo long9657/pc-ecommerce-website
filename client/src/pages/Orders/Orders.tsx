@@ -97,7 +97,7 @@ export default function Orders() {
                         Mã đơn: <span className='text-blue-600'>#{order._id.substring(0, 8).toUpperCase()}</span>
                       </span>
                       <span className='text-gray-300'>|</span>
-                      <span className='text-gray-500 text-sm'>{new Date(order.created_at).toLocaleDateString('vi-VN')}</span>
+                      <span className='text-gray-500 text-sm'>{new Date(order.created_at).toLocaleDateString('en-US')}</span>
                     </div>
                     <div className={`font-bold text-sm flex items-center gap-1.5 ${statusInfo.color}`}>
                       {statusInfo.text}
@@ -118,10 +118,10 @@ export default function Orders() {
                         </div>
                         <div className='text-right'>
                           <span className='text-gray-500 line-through text-sm mr-2'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * 1.2)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price * 1.2)}
                           </span>
                           <span className='font-bold text-rose-600 text-lg whitespace-nowrap block mt-1'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                           </span>
                         </div>
                       </div>
@@ -137,7 +137,7 @@ export default function Orders() {
                       <div className='text-right'>
                         <span className='text-gray-600 text-sm mr-2'>Tổng cộng:</span>
                         <span className='text-xl font-black text-rose-600'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.final_price)}
+                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.final_price)}
                         </span>
                       </div>
                       

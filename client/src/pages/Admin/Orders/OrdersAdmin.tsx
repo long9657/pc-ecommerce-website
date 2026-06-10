@@ -41,10 +41,10 @@ export default function OrdersAdmin() {
   })
 
   const formatPrice = (price: number) =>
-    price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+    price?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleString('vi-VN')
+    new Date(dateStr).toLocaleString('en-US')
 
   const grouped: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] }
   if (data) {

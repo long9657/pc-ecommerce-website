@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, Link, useParams, useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProducts } from '../../api/product.api'
@@ -6,7 +6,6 @@ import { getCategories } from '../../api/category.api'
 import { addToCart } from '../../api/purchase.api'
 import { toast } from 'react-toastify'
 import { generateNameId, getIdFromNameId } from '../../utils/utils'
-
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -16,71 +15,95 @@ export default function Products() {
   const queryClient = useQueryClient()
 
   // 1. Get filters from URL Search Params
-  const categoryFilter = searchParams.get('category') || categorySlug || 'All'
-  const categoryId = categoryFilter !== 'All' ? getIdFromNameId(categoryFilter) : 'All'
-  const minPrice = searchParams.get('minPrice') || ''
-  const maxPrice = searchParams.get('maxPrice') || ''
+  const urlCategoryFilter = searchParams.get('category') || categorySlug || 'All'
+  const urlCategoryId = urlCategoryFilter !== 'All' ? getIdFromNameId(urlCategoryFilter) : 'All'
+  const urlMinPrice = searchParams.get('minPrice') || ''
+  const urlMaxPrice = searchParams.get('maxPrice') || ''
+  const urlColor = searchParams.get('color') || ''
   const sortBy = searchParams.get('sort') || 'newest'
   const searchFilter = searchParams.get('search') || ''
   const page = searchParams.get('page') || '1'
 
-  // Input states for price filter (so it doesn't trigger URL updates on every keystroke)
-  const [priceInput, setPriceInput] = useState({
-    min: minPrice,
-    max: maxPrice
-  })
+  // Local Filter States
+  const [localCategory, setLocalCategory] = useState<string>(urlCategoryFilter)
+  const [localMinPrice, setLocalMinPrice] = useState<string>(urlMinPrice)
+  const [localMaxPrice, setLocalMaxPrice] = useState<string>(urlMaxPrice)
+  const [localColor, setLocalColor] = useState<string>(urlColor)
 
-  // Apply Price Filters
-  const handleApplyPrice = (e: React.FormEvent) => {
-    e.preventDefault()
+  // Sync local state when URL changes
+  useEffect(() => {
+    setLocalCategory(urlCategoryFilter)
+    setLocalMinPrice(urlMinPrice)
+    setLocalMaxPrice(urlMaxPrice)
+    setLocalColor(urlColor)
+  }, [urlCategoryFilter, urlMinPrice, urlMaxPrice, urlColor])
+
+  // Accordion toggle states
+  const [openCategory, setOpenCategory] = useState(true)
+  const [openPrice, setOpenPrice] = useState(true)
+  const [openColor, setOpenColor] = useState(true)
+
+  // Calculate pending filters count
+  const pendingFiltersCount = useMemo(() => {
+    let count = 0
+    if (localCategory !== 'All') count++
+    if (localMinPrice || localMaxPrice) count++
+    if (localColor) count++
+    return count
+  }, [localCategory, localMinPrice, localMaxPrice, localColor])
+
+  const applyLocalFilters = () => {
     const newParams = new URLSearchParams(searchParams)
-    if (priceInput.min) {
-      newParams.set('minPrice', priceInput.min)
+    
+    if (localCategory !== 'All') {
+      newParams.set('category', localCategory)
     } else {
-      newParams.delete('minPrice')
+      newParams.delete('category')
     }
-    if (priceInput.max) {
-      newParams.set('maxPrice', priceInput.max)
-    } else {
-      newParams.delete('maxPrice')
-    }
+
+    if (localMinPrice) newParams.set('minPrice', localMinPrice)
+    else newParams.delete('minPrice')
+
+    if (localMaxPrice) newParams.set('maxPrice', localMaxPrice)
+    else newParams.delete('maxPrice')
+
+    if (localColor) newParams.set('color', localColor)
+    else newParams.delete('color')
+
     newParams.set('page', '1') // Reset page on filter change
-    setSearchParams(newParams)
+    
+    if (categorySlug && localCategory === 'All') {
+      navigate({ pathname: '/products', search: newParams.toString() })
+    } else if (categorySlug && localCategory !== urlCategoryFilter) {
+      navigate({ pathname: `/products/${localCategory}`, search: newParams.toString() })
+    } else {
+      setSearchParams(newParams)
+    }
   }
 
-  // Update a single filter helper
   const updateFilter = (key: string, value: string) => {
-    if (key === 'category') {
-      const newParams = new URLSearchParams(searchParams)
-      newParams.set('page', '1')
-      if (value === 'All') {
-        newParams.delete('category')
-      } else {
-        newParams.set('category', value)
-      }
-      navigate({ pathname: '/products', search: newParams.toString() })
-      return
-    }
-
     const newParams = new URLSearchParams(searchParams)
-    if (value === 'All' || !value) {
-      newParams.delete(key)
+    newParams.set(key, value)
+    if (key !== 'page') newParams.set('page', '1') // Reset page on sort change
+    
+    if (categorySlug && urlCategoryFilter === 'All') {
+      navigate({ pathname: '/products', search: newParams.toString() })
+    } else if (categorySlug) {
+      navigate({ pathname: `/products/${categorySlug}`, search: newParams.toString() })
     } else {
-      newParams.set(key, value)
+      setSearchParams(newParams)
     }
-    if (key !== 'page') {
-      newParams.set('page', '1') // Reset page on filter change
-    }
-    setSearchParams(newParams)
   }
 
   const clearAllFilters = () => {
-    setPriceInput({ min: '', max: '' })
-    if (categorySlug || searchParams.get('category')) {
-      navigate('/products')
-    } else {
-      setSearchParams(new URLSearchParams())
-    }
+    setLocalCategory('All')
+    setLocalMinPrice('')
+    setLocalMaxPrice('')
+    setLocalColor('')
+    const newParams = new URLSearchParams()
+    if (sortBy !== 'newest') newParams.set('sort', sortBy)
+    if (searchFilter) newParams.set('search', searchFilter)
+    navigate({ pathname: '/products', search: newParams.toString() })
   }
 
   // Fetch Categories
@@ -91,19 +114,19 @@ export default function Products() {
   const categories = categoriesData?.data?.result || []
 
   // Find Category Name for Display
-    const currentCategoryName = useMemo(() => {
-    if (categoryFilter === 'All') return 'Full Hardware Store'
-    const cat = categories.find((c: any) => c._id === categoryId) // Đổi thành categoryId
-    return cat ? cat.name : categoryFilter
-  }, [categoryFilter, categories, categoryId]) // Thêm categoryId vào dependency list
-
+  const currentCategoryName = useMemo(() => {
+    if (urlCategoryFilter === 'All') return 'Full Hardware Store'
+    const cat = categories.find((c: any) => c._id === urlCategoryId)
+    return cat ? cat.name : urlCategoryFilter
+  }, [urlCategoryFilter, categories, urlCategoryId])
 
   // Fetch Products
   const queryConfig = {
-    category: categoryId !== 'All' ? categoryId : undefined,
+    category: urlCategoryId !== 'All' ? urlCategoryId : undefined,
     search: searchFilter || undefined,
-    price_min: minPrice || undefined,
-    price_max: maxPrice || undefined,
+    price_min: urlMinPrice || undefined,
+    price_max: urlMaxPrice || undefined,
+    color: urlColor || undefined,
     sort: sortBy,
     page: page,
     limit: 12
@@ -120,31 +143,37 @@ export default function Products() {
   const addToCartMutation = useMutation({
     mutationFn: (productId: string) => addToCart({ product_id: productId, buy_count: 1 }),
     onSuccess: () => {
-      toast.success('Đã thêm sản phẩm vào giỏ hàng!')
+      toast.success('Added product to cart!')
       queryClient.invalidateQueries({ queryKey: ['purchases', 0] })
     },
     onError: (error: any) => {
       if (error.response?.status === 422 || error.response?.status === 401) {
-        toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!')
+        toast.error('Please login to add to cart!')
       } else {
-        toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng!')
+        toast.error('An error occurred while adding to cart!')
       }
     }
   })
 
-  const handleAddToCart = (productId: string) => {
-    addToCartMutation.mutate(productId)
-  }
+  const priceRanges = [
+    { label: '$0.00 - $1,000.00', min: '0', max: '1000' },
+    { label: '$1,000.00 - $2,000.00', min: '1000', max: '2000' },
+    { label: '$2,000.00 - $3,000.00', min: '2000', max: '3000' },
+    { label: '$3,000.00 - $4,000.00', min: '3000', max: '4000' },
+    { label: '$4,000.00 - $5,000.00', min: '4000', max: '5000' },
+    { label: '$5,000.00 - $6,000.00', min: '5000', max: '6000' },
+    { label: '$6,000.00 - $7,000.00', min: '6000', max: '7000' },
+    { label: '$7,000.00 And Above', min: '7000', max: '' }
+  ]
 
   return (
     <div className='min-h-screen bg-slate-50 font-sans p-6'>
-
       <div className='max-w-7xl mx-auto'>
         <div className='flex items-center gap-1.5 text-xs text-dark opacity-70 mb-4'>
           <Link to='/' className='hover:text-primary transition'>Home</Link>
           <span className='opacity-50'>›</span>
           <Link to='/products' className='hover:text-primary transition'>Products</Link>
-          {categoryFilter !== 'All' && (
+          {urlCategoryFilter !== 'All' && (
             <>
               <span className='opacity-50'>›</span>
               <span className='font-medium text-dark'>{currentCategoryName}</span>
@@ -174,78 +203,91 @@ export default function Products() {
 
             {/* Category Accordion */}
             <div className='border-b border-gray-200 pb-4 mb-4'>
-              <div className='flex items-center justify-between cursor-pointer mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4' onClick={() => setOpenCategory(!openCategory)}>
                 <h3 className='text-xs font-bold text-dark'>Category</h3>
-                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
+                <svg className={`w-3 h-3 text-dark transition-transform ${openCategory ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'/></svg>
               </div>
-              <div className='space-y-3'>
-                {categories.slice(0, 5).map((cat: any) => (
-                  <div 
-                    key={cat._id}
-                    onClick={() => updateFilter('category', generateNameId({ name: cat.name, id: cat._id }))}
-                    className={`flex items-center justify-between text-xs cursor-pointer ${categoryFilter === generateNameId({ name: cat.name, id: cat._id }) ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
-                  >
-                    <span>{cat.name}</span>
-                  </div>
-                ))}
-              </div>
+              {openCategory && (
+                <div className='space-y-3'>
+                  {categories.map((cat: any) => {
+                    const catSlug = generateNameId({ name: cat.name, id: cat._id })
+                    const isSelected = localCategory === catSlug
+                    return (
+                      <div 
+                        key={cat._id}
+                        onClick={() => setLocalCategory(isSelected ? 'All' : catSlug)}
+                        className={`flex items-center justify-between text-xs cursor-pointer ${isSelected ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
+                      >
+                        <span>{cat.name}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Price Accordion */}
             <div className='border-b border-gray-200 pb-4 mb-4'>
-              <div className='flex items-center justify-between cursor-pointer mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4' onClick={() => setOpenPrice(!openPrice)}>
                 <h3 className='text-xs font-bold text-dark'>Price</h3>
-                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
+                <svg className={`w-3 h-3 text-dark transition-transform ${openPrice ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'/></svg>
               </div>
-              <div className='space-y-3'>
-                {[
-                  { label: '$0.00 - $1,000.00', min: '0', max: '1000' },
-                  { label: '$1,000.00 - $2,000.00', min: '1000', max: '2000' },
-                  { label: '$2,000.00 - $3,000.00', min: '2000', max: '3000' },
-                  { label: '$3,000.00 - $4,000.00', min: '3000', max: '4000' },
-                  { label: '$4,000.00 - $5,000.00', min: '4000', max: '5000' },
-                  { label: '$5,000.00 - $6,000.00', min: '5000', max: '6000' },
-                  { label: '$6,000.00 - $7,000.00', min: '6000', max: '7000' },
-                  { label: '$7,000.00 And Above', min: '7000', max: '' }
-                ].map((range, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams)
-                      if(range.min) newParams.set('minPrice', range.min)
-                      else newParams.delete('minPrice')
-                      if(range.max) newParams.set('maxPrice', range.max)
-                      else newParams.delete('maxPrice')
-                      setSearchParams(newParams)
-                    }}
-                    className={`flex items-center justify-between text-xs cursor-pointer ${(minPrice === range.min && maxPrice === range.max) ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
-                  >
-                    <span>{range.label}</span>
-                  </div>
-                ))}
-              </div>
+              {openPrice && (
+                <div className='space-y-3'>
+                  {priceRanges.map((range, idx) => {
+                    const isSelected = localMinPrice === range.min && localMaxPrice === range.max
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setLocalMinPrice('')
+                            setLocalMaxPrice('')
+                          } else {
+                            setLocalMinPrice(range.min)
+                            setLocalMaxPrice(range.max)
+                          }
+                        }}
+                        className={`flex items-center justify-between text-xs cursor-pointer ${isSelected ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
+                      >
+                        <span>{range.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Color Accordion */}
             <div className='border-b border-gray-200 pb-4 mb-4'>
-              <div className='flex items-center justify-between cursor-pointer mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4' onClick={() => setOpenColor(!openColor)}>
                 <h3 className='text-xs font-bold text-dark'>Color</h3>
-                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
+                <svg className={`w-3 h-3 text-dark transition-transform ${openColor ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'/></svg>
               </div>
-              <div className='flex items-center gap-2'>
-                <div className='w-6 h-6 rounded-full bg-black cursor-pointer border-2 border-transparent hover:border-gray-300 transition-colors'></div>
-                <div className='w-6 h-6 rounded-full bg-red-600 cursor-pointer border-2 border-primary transition-colors'></div>
-              </div>
+              {openColor && (
+                <div className='flex items-center gap-2'>
+                  <div 
+                    onClick={() => setLocalColor(localColor === 'black' ? '' : 'black')} 
+                    className={`w-6 h-6 rounded-full bg-black cursor-pointer border-2 transition-colors ${localColor === 'black' ? 'border-primary' : 'border-transparent hover:border-gray-300'}`}
+                    title='Black'
+                  ></div>
+                  <div 
+                    onClick={() => setLocalColor(localColor === 'red' ? '' : 'red')} 
+                    className={`w-6 h-6 rounded-full bg-red-600 cursor-pointer border-2 transition-colors ${localColor === 'red' ? 'border-primary' : 'border-transparent hover:border-red-400'}`}
+                    title='Red'
+                  ></div>
+                </div>
+              )}
             </div>
 
-            {/* Filter Name Accordion */}
+            {/* Apply Button */}
             <div className='border-b border-gray-200 pb-4 mb-4'>
-              <div className='flex items-center justify-between cursor-pointer mb-4'>
-                <h3 className='text-xs font-bold text-dark'>Filter Name</h3>
-                <svg className='w-3 h-3 text-dark' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 15l7-7 7 7'/></svg>
-              </div>
-              <button className='w-full py-2.5 bg-primary hover:bg-primary/90 text-white rounded-full text-xs font-bold transition-colors cursor-pointer'>
-                Apply Filters (2)
+              <button 
+                onClick={applyLocalFilters}
+                className='w-full py-2.5 bg-primary hover:bg-primary/90 text-white rounded-full text-xs font-bold transition-colors cursor-pointer disabled:opacity-50'
+                disabled={pendingFiltersCount === 0 && urlCategoryFilter === 'All' && !urlMinPrice && !urlMaxPrice && !urlColor}
+              >
+                Apply Filters {pendingFiltersCount > 0 ? `(${pendingFiltersCount})` : ''}
               </button>
             </div>
 
@@ -322,6 +364,81 @@ export default function Products() {
             </div>
           </div>
 
+          {/* Active Filters */}
+          {(urlCategoryFilter !== 'All' || urlMinPrice || urlMaxPrice || searchFilter || urlColor) && (
+            <div className='flex flex-wrap items-center gap-3 mb-6 animate-fade-in'>
+              <span className='text-sm font-bold text-dark'>Filters</span>
+              
+              {urlCategoryFilter !== 'All' && (
+                <div className='flex items-center gap-2 px-3 py-1.5 border-2 border-gray-200 rounded bg-white text-[11px] font-bold text-dark'>
+                  {currentCategoryName}
+                  <button onClick={() => {
+                      setLocalCategory('All')
+                      const newParams = new URLSearchParams(searchParams)
+                      newParams.delete('category')
+                      newParams.set('page', '1')
+                      navigate({ pathname: '/products', search: newParams.toString() })
+                  }} className='text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors'>
+                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clipRule='evenodd'/></svg>
+                  </button>
+                </div>
+              )}
+
+              {(urlMinPrice || urlMaxPrice) && (
+                <div className='flex items-center gap-2 px-3 py-1.5 border-2 border-gray-200 rounded bg-white text-[11px] font-bold text-dark'>
+                  {priceRanges.find(r => r.min === urlMinPrice && r.max === urlMaxPrice)?.label || `$${urlMinPrice} - $${urlMaxPrice}`}
+                  <button onClick={() => {
+                      setLocalMinPrice('')
+                      setLocalMaxPrice('')
+                      const newParams = new URLSearchParams(searchParams)
+                      newParams.delete('minPrice')
+                      newParams.delete('maxPrice')
+                      newParams.set('page', '1')
+                      setSearchParams(newParams)
+                  }} className='text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors'>
+                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clipRule='evenodd'/></svg>
+                  </button>
+                </div>
+              )}
+
+              {searchFilter && (
+                <div className='flex items-center gap-2 px-3 py-1.5 border-2 border-gray-200 rounded bg-white text-[11px] font-bold text-dark'>
+                  Search: {searchFilter}
+                  <button onClick={() => {
+                      const newParams = new URLSearchParams(searchParams)
+                      newParams.delete('search')
+                      newParams.set('page', '1')
+                      setSearchParams(newParams)
+                  }} className='text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors'>
+                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clipRule='evenodd'/></svg>
+                  </button>
+                </div>
+              )}
+
+              {urlColor && (
+                <div className='flex items-center gap-2 px-3 py-1.5 border-2 border-gray-200 rounded bg-white text-[11px] font-bold text-dark'>
+                  Color: <span className='capitalize'>{urlColor}</span>
+                  <button onClick={() => {
+                      setLocalColor('')
+                      const newParams = new URLSearchParams(searchParams)
+                      newParams.delete('color')
+                      newParams.set('page', '1')
+                      setSearchParams(newParams)
+                  }} className='text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors'>
+                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clipRule='evenodd'/></svg>
+                  </button>
+                </div>
+              )}
+
+              <button 
+                onClick={clearAllFilters}
+                className='px-4 py-1.5 border border-gray-200 bg-white hover:bg-gray-50 rounded text-[11px] font-bold text-dark transition-colors cursor-pointer'
+              >
+                Clear All
+              </button>
+            </div>
+          )}
+
           {!isFetching && products.length === 0 && (
             <div className='bg-white rounded-3xl p-12 text-center border border-slate-200/60 shadow-sm'>
               <div className='w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm animate-pulse mb-4'>
@@ -388,27 +505,39 @@ export default function Products() {
                       </h3>
                     </div>
                     
-                    <div className='pt-3 mt-auto relative'>
+                    <div className='pt-3 mt-auto relative z-10'>
                       {product.price_before_discount && (
-                        <span className='text-[12px] line-through text-gray-400 block leading-none select-none mb-1'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                        <span className='text-[12px] line-through text-gray-400 block leading-none select-none mb-1 opacity-100 group-hover:opacity-0 transition-opacity'>
+                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price_before_discount)}
                         </span>
                       )}
-                      <div className='text-[18px] font-bold text-dark leading-none'>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                      <div className='text-[18px] font-bold text-dark leading-none opacity-100 group-hover:opacity-0 transition-opacity'>
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
                       </div>
 
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleAddToCart(product._id)
-                        }}
-                        disabled={!inStock}
-                        className={`absolute right-0 bottom-0 h-8 w-8 rounded-full flex items-center justify-center transition-all cursor-pointer select-none opacity-0 group-hover:opacity-100 ${inStock ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                        title={inStock ? 'Add to Cart' : 'Out of Stock'}
-                      >
-                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' /></svg>
+                      <div className='absolute top-0 left-0 right-0 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            addToCartMutation.mutate(product._id)
+                          }}
+                          disabled={!inStock}
+                          className={`w-full py-2.5 rounded-full flex items-center justify-center gap-2 border-2 transition-all cursor-pointer font-bold text-sm ${inStock ? 'border-primary text-primary hover:bg-primary hover:text-white' : 'border-gray-200 text-gray-400 cursor-not-allowed'}`}
+                        >
+                          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' /></svg>
+                          {inStock ? 'Add To Cart' : 'Out of Stock'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Top right hover icons */}
+                    <div className='absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-20'>
+                      <button onClick={(e) => {e.preventDefault(); e.stopPropagation()}} className='w-8 h-8 rounded-full border-2 border-gray-300 text-gray-400 flex items-center justify-center hover:text-dark hover:border-dark bg-white transition-colors'>
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' /></svg>
+                      </button>
+                      <button onClick={(e) => {e.preventDefault(); e.stopPropagation()}} className='w-8 h-8 rounded-full border-2 border-gray-300 text-gray-400 flex items-center justify-center hover:text-dark hover:border-dark bg-white transition-colors'>
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' /></svg>
                       </button>
                     </div>
                   </Link>
@@ -422,7 +551,7 @@ export default function Products() {
                 return (
                   <Link
                     key={product._id}
-                    to={`/${categorySlug || categories.find((c: any) => c._id === product.category_id)?.slug || 'products'}/${product.slug}`}
+                    to={`/${categorySlug || categories.find((c: any) => c._id === product.category_id)?.name || 'products'}/${generateNameId({ name: product.name, id: product._id })}`}
                     className='bg-white p-6 border-b border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row items-center gap-8 group relative no-underline block'
                   >
 
@@ -475,19 +604,19 @@ export default function Products() {
                       <div>
                         {product.price_before_discount && (
                           <span className='text-[12px] line-through text-gray-400 block leading-none select-none mb-1'>
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price_before_discount)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price_before_discount)}
                           </span>
                         )}
                         <div className='text-[20px] font-bold text-dark leading-none'>
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
                         </div>
                       </div>
 
                       <button
                         onClick={(e) => {
-                          handleAddToCart(product._id)
                           e.preventDefault()
                           e.stopPropagation()
+                          addToCartMutation.mutate(product._id)
                         }}
                         disabled={!inStock}
                         className={`h-10 px-6 w-full rounded-full flex items-center justify-center gap-2 text-xs font-bold transition cursor-pointer select-none ${inStock

@@ -20,6 +20,7 @@ interface ProductType {
   price: number
   price_before_discount: number
   quantity: number
+  color?: string
   sold?: number
   view?: number
   rating?: number
@@ -39,6 +40,7 @@ export default class Product {
   price: number
   price_before_discount: number
   quantity: number
+  color: string
   sold: number
   view: number
   rating: number
@@ -58,6 +60,7 @@ export default class Product {
     this.price = product.price
     this.price_before_discount = product.price_before_discount
     this.quantity = product.quantity
+    this.color = product.color || 'black'
     this.sold = product.sold || 0
     this.view = product.view || 0
     this.rating = product.rating || 0

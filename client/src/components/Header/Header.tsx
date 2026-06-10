@@ -152,16 +152,67 @@ function Header() {
           </div>
 
           {/* Cart */}
-          <Link to='/bills' className='relative text-dark hover:text-primary transition-colors'>
-            <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-6 h-6'>
-              <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z' />
-            </svg>
-            {cartItemsCount > 0 && (
-              <span className='absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm'>
-                {cartItemsCount}
-              </span>
-            )}
-          </Link>
+          <Popover
+            renderPopover={
+              <div className='relative bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-[320px] p-5 font-sans z-50 rounded-sm border border-gray-100'>
+                {/* Triangle pointer */}
+                <div className='absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-gray-100 transform rotate-45'></div>
+                
+                <div className='relative bg-white z-10 text-center'>
+                  <h3 className='text-lg font-bold text-dark'>My Cart</h3>
+                  <p className='text-xs text-gray-400 mb-4'>{cartItemsCount} item in cart</p>
+                  
+                  <Link to='/bills' className='block w-full py-2 mb-4 border-2 border-primary text-primary rounded-full text-sm font-bold hover:bg-primary hover:text-white transition-colors text-center'>
+                    View or Edit Your Cart
+                  </Link>
+
+                  <div className='border-t border-b border-gray-100 py-4 mb-4 max-h-[300px] overflow-y-auto space-y-4 text-left'>
+                    {cartData?.data?.result?.map((item: any) => (
+                      <div key={item._id} className='flex gap-3 items-center group relative'>
+                        <span className='text-sm font-bold text-dark shrink-0'>{item.buy_count} <span className='text-gray-400 font-normal'>x</span></span>
+                        <img src={item.product?.image} alt={item.product?.name} className='w-12 h-12 object-contain shrink-0' />
+                        <span className='text-xs font-semibold text-dark line-clamp-2 leading-snug'>{item.product?.name}</span>
+                        
+                        {/* Hover actions */}
+                        <div className='absolute right-0 top-1/2 -translate-y-1/2 flex-col gap-1 hidden group-hover:flex bg-white pl-2'>
+                          <button className='w-5 h-5 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center hover:text-red-500 hover:border-red-500 transition-colors'>✕</button>
+                          <button className='w-5 h-5 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center hover:text-primary hover:border-primary transition-colors'>✎</button>
+                        </div>
+                      </div>
+                    ))}
+                    {cartItemsCount === 0 && <p className='text-center text-gray-400 text-sm'>Cart is empty</p>}
+                  </div>
+
+                  <div className='flex justify-center gap-2 items-end mb-4'>
+                    <span className='text-sm font-bold text-gray-400'>Subtotal:</span>
+                    <span className='text-xl font-bold text-dark'>
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+                        cartData?.data?.result?.reduce((acc: number, item: any) => acc + (item.product?.price || 0) * item.buy_count, 0) || 0
+                      )}
+                    </span>
+                  </div>
+
+                  <Link to='/checkout' className='block w-full py-3 mb-2 bg-primary text-white rounded-full text-sm font-bold hover:bg-primary/90 transition-colors text-center'>
+                    Go to Checkout
+                  </Link>
+                  <button className='w-full py-3 bg-[#FFC439] text-[#003087] rounded-full text-sm font-bold hover:bg-[#F4B938] transition-colors flex items-center justify-center gap-1'>
+                    Check out with <span className='font-black italic'>PayPal</span>
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            <Link to='/bills' className='relative block text-dark hover:text-primary transition-colors py-2'>
+              <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-6 h-6'>
+                <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z' />
+              </svg>
+              {cartItemsCount > 0 && (
+                <span className='absolute top-0 -right-2 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm pointer-events-none'>
+                  {cartItemsCount}
+                </span>
+              )}
+            </Link>
+          </Popover>
 
           {/* Account */}
           {isAuthenticated ? (
@@ -208,19 +259,17 @@ function Header() {
           ) : (
             <Popover
               renderPopover={
-                <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-36 overflow-hidden font-sans z-50'>
-                  <button
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark hover:bg-secondary hover:text-primary transition cursor-pointer font-medium'
-                    onClick={() => navigate('/login')}
-                  >
-                    Đăng nhập
-                  </button>
-                  <button
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark border-t border-gray-100 hover:bg-secondary hover:text-primary transition cursor-pointer font-medium'
-                    onClick={() => navigate('/register')}
-                  >
-                    Đăng ký
-                  </button>
+                <div className='relative bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-56 p-4 font-sans z-50 rounded-sm border border-gray-100'>
+                  {/* Triangle pointer */}
+                  <div className='absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-gray-100 transform rotate-45'></div>
+                  
+                  <div className='relative bg-white z-10 flex flex-col gap-2.5 text-[13px] font-semibold text-gray-800'>
+                    <Link to='/profile' className='hover:text-primary transition-colors'>My Account</Link>
+                    <Link to='#' className='hover:text-primary transition-colors'>My Wish List (0)</Link>
+                    <Link to='#' className='hover:text-primary transition-colors'>Compare (0)</Link>
+                    <Link to='/register' className='hover:text-primary transition-colors mt-1'>Create an Account</Link>
+                    <Link to='/login' className='hover:text-primary transition-colors'>Sign In</Link>
+                  </div>
                 </div>
               }
             >

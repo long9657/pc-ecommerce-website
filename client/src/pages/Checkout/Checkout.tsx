@@ -62,7 +62,7 @@ export default function Checkout() {
   })
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price || 0)
 
   const [isQrModalOpen, setIsQrModalOpen] = useState(false)
 

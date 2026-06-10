@@ -9,6 +9,7 @@ import Category from '~/models/schemas/Category.schema'
 import Product from '~/models/schemas/Product.schema'
 import Purchase from '~/models/schemas/Purchase.schema'
 import Order from '~/models/schemas/Order.schema'
+import Review from '~/models/schemas/Review.schema'
 config()
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@pc.bagchof.mongodb.net/?appName=PC`
@@ -51,6 +52,10 @@ class Database {
 
   get orders(): Collection<Order> {
     return this.db.collection(process.env.DB_ORDERS_COLLECTIONS || 'orders')
+  }
+
+  get reviews(): Collection<Review> {
+    return this.db.collection(process.env.DB_REVIEWS_COLLECTIONS || 'reviews')
   }
 }
 

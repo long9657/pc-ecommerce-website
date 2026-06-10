@@ -27,7 +27,7 @@ export default function UsersAdmin() {
     }
   }
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('vi-VN')
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('en-US')
 
   if (isLoading)
     return (
