@@ -8,6 +8,7 @@ import purchasesRouter from './routes/purchases.routes'
 import ordersRouter from './routes/orders.routes'
 import reviewsRouter from './routes/reviews.routes'
 import statsRouter from './routes/stats.routes'
+import chatRouter from './routes/chat.routes'
 import database from './services/database.services'
 import { defaultErrorHandler } from './middlewares/error.middleware'
 import { initFolder, UPLOAD_DIR } from './utils/file'
@@ -27,6 +28,7 @@ app.use('/purchases', purchasesRouter)
 app.use('/orders', ordersRouter)
 app.use('/reviews', reviewsRouter)
 app.use('/admin/stats', statsRouter)
+app.use('/chat', chatRouter)
 app.use('/uploads', express.static(UPLOAD_DIR))
 
 app.use(defaultErrorHandler)
