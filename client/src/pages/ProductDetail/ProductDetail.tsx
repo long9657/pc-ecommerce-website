@@ -5,6 +5,7 @@ import { getProductDetail } from '../../api/product.api'
 import { addToCart } from '../../api/purchase.api'
 import { getReviews, createReview } from '../../api/review.api'
 import { toast } from 'react-toastify'
+
 import { getIdFromNameId } from '../../utils/utils'
 
 const OUTPLAY_SLIDES = [
@@ -60,6 +61,8 @@ export default function ProductDetail() {
     const [reviewText, setReviewText] = useState('')
     const [activeColor, setActiveColor] = useState(0)
     const [outplayIndex, setOutplayIndex] = useState(0)
+
+    const id = getIdFromNameId(productSlug as string)
 
     const id = getIdFromNameId(productSlug as string)
 
