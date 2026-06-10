@@ -231,3 +231,112 @@ export const isAdminValidator = async (req: Request, res: Response, next: NextFu
     next(error)
   }
 }
+
+export const forgotPasswordValidator = validate(
+  checkSchema(
+    {
+      email: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
+        },
+        isEmail: {
+          errorMessage: USERS_MESSAGES.EMAIL_IS_INVALID
+        },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            const user = await database.users.findOne({ email: value })
+            if (user === null) {
+              throw new Error('Email không tồn tại trong hệ thống')
+            }
+            req.user = user
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const resetPasswordValidator = validate(
+  checkSchema(
+    {
+      password: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.PASSWORD_IS_REQUIRED
+        },
+        isString: {
+          errorMessage: USERS_MESSAGES.PASSWORD_MUST_BE_A_STRING
+        },
+        isLength: {
+          options: {
+            min: 6,
+            max: 50
+          },
+          errorMessage: USERS_MESSAGES.PASSWORD_LENGTH_MUST_BE_FROM_6_TO_50
+        }
+      },
+      confirm_password: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_IS_REQUIRED
+        },
+        isString: {
+          errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_A_STRING
+        },
+        isLength: {
+          options: {
+            min: 6,
+            max: 50
+          },
+          errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_LENGTH_MUST_BE_FROM_6_TO_50
+        },
+        custom: {
+          options: (value, { req }) => {
+            if (value !== req.body.password) {
+              throw new Error(USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD)
+            }
+            return true
+          }
+        }
+      },
+      forgot_password_token: {
+        notEmpty: {
+          errorMessage: 'Vui lòng cung cấp token khôi phục mật khẩu'
+        },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            try {
+              const decoded_forgot_password_token = await verifyToken({ token: value })
+              const user = await database.users.findOne({ _id: new ObjectId(decoded_forgot_password_token.user_id) })
+              if (user === null) {
+                throw new ErrorWithStatus({
+                  message: 'Người dùng không tồn tại',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              if (user.forgot_password_token !== value) {
+                throw new ErrorWithStatus({
+                  message: 'Token khôi phục mật khẩu không hợp lệ',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              req.decoded_forgot_password_token = decoded_forgot_password_token
+              return true
+            } catch (error: any) {
+              if (error instanceof jwt.JsonWebTokenError) {
+                throw new ErrorWithStatus({
+                  message: 'Token khôi phục mật khẩu không hợp lệ',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              throw error
+            }
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)

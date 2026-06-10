@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { getMeController, loginController, logoutController, refreshTokenController, registerController, getAllUsersAdminController, deleteUserAdminController } from '~/controllers/users.controllers'
-import { accessTokenValidator, loginValidator, refreshTokenValidator, registerValidator, isAdminValidator } from '~/middlewares/user.middlewares'
+import { getMeController, loginController, logoutController, refreshTokenController, registerController, getAllUsersAdminController, deleteUserAdminController, forgotPasswordController, resetPasswordController } from '~/controllers/users.controllers'
+import { accessTokenValidator, loginValidator, refreshTokenValidator, registerValidator, isAdminValidator, forgotPasswordValidator, resetPasswordValidator } from '~/middlewares/user.middlewares'
 import { wrapRequestHandler } from '~/utils/wrap'
 const userRouter = Router()
 
@@ -40,6 +40,18 @@ userRouter.delete(
   accessTokenValidator,
   isAdminValidator,
   wrapRequestHandler(deleteUserAdminController)
+)
+
+userRouter.post(
+  '/forgot-password',
+  forgotPasswordValidator,
+  wrapRequestHandler(forgotPasswordController)
+)
+
+userRouter.post(
+  '/reset-password',
+  resetPasswordValidator,
+  wrapRequestHandler(resetPasswordController)
 )
 
 export default userRouter

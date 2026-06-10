@@ -8,6 +8,7 @@ import { StringValue } from 'ms'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { ObjectId } from 'mongodb'
 import { config } from 'dotenv'
+import { sendResetPasswordEmail } from '~/utils/email'
 
 config()
 
@@ -106,6 +107,38 @@ class UserServices {
     // Cần xóa cả refresh token của user này để ép đăng xuất
     await database.refreshTokens.deleteMany({ user_id: new ObjectId(user_id) })
     return result
+  }
+
+  async forgotPassword(user_id: string, email: string) {
+    const forgot_password_token = await signToken({
+      payload: { user_id, token_type: TokenType.ForgotPasswordToken },
+      options: {
+        expiresIn: '15m'
+      }
+    })
+    await database.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      { $set: { forgot_password_token } }
+    )
+    await sendResetPasswordEmail(email, forgot_password_token)
+    return {
+      message: 'Vui lòng kiểm tra email của bạn để khôi phục mật khẩu'
+    }
+  }
+
+  async resetPassword(user_id: string, password: string) {
+    await database.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      { 
+        $set: { password: hashPassword(password), updated_at: new Date() },
+        $unset: { forgot_password_token: '' as any } 
+      }
+    )
+    // Đăng xuất khỏi mọi thiết bị sau khi đổi mật khẩu
+    await database.refreshTokens.deleteMany({ user_id: new ObjectId(user_id) })
+    return {
+      message: 'Mật khẩu đã được thay đổi thành công'
+    }
   }
 }
 

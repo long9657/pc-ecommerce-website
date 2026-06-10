@@ -71,3 +71,16 @@ export const deleteUserAdminController = async (req: Request, res: Response) => 
     result
   })
 }
+
+export const forgotPasswordController = async (req: Request, res: Response) => {
+  const { user } = req // Provided by validator
+  const result = await userServices.forgotPassword((user as any)._id.toString(), (user as any).email)
+  return res.json(result)
+}
+
+export const resetPasswordController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_forgot_password_token // Provided by validator
+  const { password } = req.body
+  const result = await userServices.resetPassword(user_id, password)
+  return res.json(result)
+}

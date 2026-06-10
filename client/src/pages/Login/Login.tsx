@@ -107,7 +107,7 @@ export default function Login() {
                 )}
                 Sign In
               </button>
-              <Link to='#' className='text-primary text-sm font-semibold hover:underline'>
+              <Link to='/forgot-password' className='text-primary text-sm font-semibold hover:underline'>
                 Forgot Your Password?
               </Link>
             </div>

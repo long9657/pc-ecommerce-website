@@ -3,7 +3,8 @@ import ProductList from './pages/ProductList/'
 import Products from './pages/Products'
 import Login from './pages/Login/'
 import Register from './pages/Register'
-import RegisterLayout from './layouts/RegisterLayout/RegisterLayout'
+import ForgotPassword from './pages/ForgotPassword/ForgotPassword'
+import ResetPassword from './pages/ResetPassword/ResetPassword'
 import MainLayout from './layouts/MainLayout'
 import Contact from './pages/Contact'
 import Faq from './pages/Faq'
@@ -57,6 +58,22 @@ function useRouteElements() {
       element: (
         <MainLayout>
           <Register />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/forgot-password',
+      element: (
+        <MainLayout>
+          <ForgotPassword />
+        </MainLayout>
+      )
+    },
+    {
+      path: '/reset-password',
+      element: (
+        <MainLayout>
+          <ResetPassword />
         </MainLayout>
       )
     },
