@@ -14,7 +14,7 @@ function Header() {
   const location = useLocation()
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
-  const [username, setUsername] = useState<string>('')
+  const [, setUsername] = useState<string>('')
   const [searchValue, setSearchValue] = useState('')
 
   const { data: categoriesData } = useQuery({
@@ -218,33 +218,24 @@ function Header() {
           {isAuthenticated ? (
             <Popover
               renderPopover={
-                <div className='relative rounded-sm border border-gray-200 bg-white shadow-md w-40 overflow-hidden font-sans z-50'>
-                  {isAdmin && (
-                    <Link
-                      to='/admin'
-                      className='block w-full bg-blue-50 py-2.5 px-4 text-left text-sm text-primary hover:bg-blue-100 transition font-bold border-b border-gray-100'
-                    >
-                      🛡️ Admin Panel
-                    </Link>
-                  )}
-                  <Link
-                    to='/profile'
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark hover:bg-secondary hover:text-primary transition'
-                  >
-                    My Account
-                  </Link>
-                  <Link
-                    to='/profile/orders'
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-dark hover:bg-secondary hover:text-primary transition'
-                  >
-                    My Orders
-                  </Link>
-                  <button
-                    className='block w-full bg-white py-2.5 px-4 text-left text-sm text-red-600 border-t border-gray-100 hover:bg-red-50 transition cursor-pointer font-medium'
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
+                <div className='relative bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-56 p-4 font-sans z-50 rounded-sm border border-gray-100'>
+                  {/* Triangle pointer */}
+                  <div className='absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-gray-100 transform rotate-45'></div>
+                  
+                  <div className='relative bg-white z-10 flex flex-col gap-2.5 text-[13px] font-semibold text-gray-800'>
+                    {isAdmin && (
+                      <Link to='/admin' className='hover:text-primary transition-colors text-blue-600'>
+                        🛡️ Admin Panel
+                      </Link>
+                    )}
+                    <Link to='/profile' className='hover:text-primary transition-colors'>My Account</Link>
+                    <Link to='/profile/orders' className='hover:text-primary transition-colors'>My Orders</Link>
+                    <Link to='#' className='hover:text-primary transition-colors'>My Wish List (0)</Link>
+                    <Link to='#' className='hover:text-primary transition-colors'>Compare (0)</Link>
+                    <button onClick={handleLogout} className='text-left text-red-600 hover:text-red-500 transition-colors mt-1 cursor-pointer'>
+                      Logout
+                    </button>
+                  </div>
                 </div>
               }
             >
@@ -264,11 +255,8 @@ function Header() {
                   <div className='absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-gray-100 transform rotate-45'></div>
                   
                   <div className='relative bg-white z-10 flex flex-col gap-2.5 text-[13px] font-semibold text-gray-800'>
-                    <Link to='/profile' className='hover:text-primary transition-colors'>My Account</Link>
-                    <Link to='#' className='hover:text-primary transition-colors'>My Wish List (0)</Link>
-                    <Link to='#' className='hover:text-primary transition-colors'>Compare (0)</Link>
-                    <Link to='/register' className='hover:text-primary transition-colors mt-1'>Create an Account</Link>
                     <Link to='/login' className='hover:text-primary transition-colors'>Sign In</Link>
+                    <Link to='/register' className='hover:text-primary transition-colors'>Create an Account</Link>
                   </div>
                 </div>
               }

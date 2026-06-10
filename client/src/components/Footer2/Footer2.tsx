@@ -2,7 +2,7 @@ function Footer2() {
   return (
     <>
       <div className=''>
-        <section className='bg-slate-50 py-16 md:py-5 px-5 '>
+        <section className='bg-[#F5F7FF] py-16 md:py-5 px-5 '>
           <div className='container mx-auto max-w-7xl'>
           
             <div className='flex flex-col md:flex-row items-start justify-center gap-12 md:gap-16'>

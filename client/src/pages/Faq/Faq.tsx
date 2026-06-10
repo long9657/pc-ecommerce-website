@@ -51,7 +51,7 @@ const Faq = () => {
             Home
           </Link>
         <span>›</span>
-        <span className='hover:underline cursor-pointer font-medium'>Text</span>
+        <span className='hover:underline cursor-pointer font-medium'>Terms & Conditions</span>
       </nav>
 
       {/* Main Container */}

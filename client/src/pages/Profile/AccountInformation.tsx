@@ -9,7 +9,7 @@ interface UserProfile {
     address?: string
 }
 
-export default function Profile() {
+export default function AccountInformation() {
     const [profile, setProfile] = useState<UserProfile>({
         name: '',
         email: '',
@@ -85,11 +85,9 @@ export default function Profile() {
         })
     }
     return (
-    <div className='max-w-4xl mx-auto px-4 py-8 font-sans'>
-      <div className='bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden'>
-        <div className='bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white'>
-          <h2 className='text-2xl font-bold'>My Account</h2>
-          <p className='text-blue-100 text-sm mt-1'>Quản lý và cập nhật thông tin cá nhân của bạn</p>
+      <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>
+        <div className='bg-gray-50 border-b border-gray-100 px-8 py-5'>
+          <h2 className='text-lg font-bold text-dark'>Account Information</h2>
         </div>
         <form onSubmit={handleSave} className='p-8 space-y-6'>
           <div className='flex flex-col md:flex-row gap-8 items-start'>
@@ -183,6 +181,5 @@ export default function Profile() {
           </div>
         </form>
       </div>
-    </div>
   )
 }

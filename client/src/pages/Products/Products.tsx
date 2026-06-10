@@ -20,6 +20,7 @@ export default function Products() {
   const urlMinPrice = searchParams.get('minPrice') || ''
   const urlMaxPrice = searchParams.get('maxPrice') || ''
   const urlColor = searchParams.get('color') || ''
+  const urlBrand = searchParams.get('brand') || ''
   const sortBy = searchParams.get('sort') || 'newest'
   const searchFilter = searchParams.get('search') || ''
   const page = searchParams.get('page') || '1'
@@ -29,6 +30,7 @@ export default function Products() {
   const [localMinPrice, setLocalMinPrice] = useState<string>(urlMinPrice)
   const [localMaxPrice, setLocalMaxPrice] = useState<string>(urlMaxPrice)
   const [localColor, setLocalColor] = useState<string>(urlColor)
+  const [localBrand, setLocalBrand] = useState<string>(urlBrand)
 
   // Sync local state when URL changes
   useEffect(() => {
@@ -36,12 +38,14 @@ export default function Products() {
     setLocalMinPrice(urlMinPrice)
     setLocalMaxPrice(urlMaxPrice)
     setLocalColor(urlColor)
-  }, [urlCategoryFilter, urlMinPrice, urlMaxPrice, urlColor])
+    setLocalBrand(urlBrand)
+  }, [urlCategoryFilter, urlMinPrice, urlMaxPrice, urlColor, urlBrand])
 
   // Accordion toggle states
   const [openCategory, setOpenCategory] = useState(true)
   const [openPrice, setOpenPrice] = useState(true)
   const [openColor, setOpenColor] = useState(true)
+  const [openBrand, setOpenBrand] = useState(true)
 
   // Calculate pending filters count
   const pendingFiltersCount = useMemo(() => {
@@ -49,8 +53,9 @@ export default function Products() {
     if (localCategory !== 'All') count++
     if (localMinPrice || localMaxPrice) count++
     if (localColor) count++
+    if (localBrand) count++
     return count
-  }, [localCategory, localMinPrice, localMaxPrice, localColor])
+  }, [localCategory, localMinPrice, localMaxPrice, localColor, localBrand])
 
   const applyLocalFilters = () => {
     const newParams = new URLSearchParams(searchParams)
@@ -69,6 +74,9 @@ export default function Products() {
 
     if (localColor) newParams.set('color', localColor)
     else newParams.delete('color')
+
+    if (localBrand) newParams.set('brand', localBrand)
+    else newParams.delete('brand')
 
     newParams.set('page', '1') // Reset page on filter change
     
@@ -100,6 +108,7 @@ export default function Products() {
     setLocalMinPrice('')
     setLocalMaxPrice('')
     setLocalColor('')
+    setLocalBrand('')
     const newParams = new URLSearchParams()
     if (sortBy !== 'newest') newParams.set('sort', sortBy)
     if (searchFilter) newParams.set('search', searchFilter)
@@ -127,6 +136,7 @@ export default function Products() {
     price_min: urlMinPrice || undefined,
     price_max: urlMaxPrice || undefined,
     color: urlColor || undefined,
+    brand: urlBrand || undefined,
     sort: sortBy,
     page: page,
     limit: 12
@@ -291,12 +301,28 @@ export default function Products() {
               </button>
             </div>
 
-            {/* Brands */}
-            <div className='pt-2'>
-              <h3 className='text-sm font-bold text-dark text-center mb-4'>Brands</h3>
-              <button className='w-full py-2.5 mb-6 border border-gray-300 rounded-full text-xs font-semibold text-gray-500 hover:text-dark hover:border-gray-400 transition-colors cursor-pointer'>
-                All Brands
-              </button>
+            {/* Brands Accordion */}
+            <div className='border-b border-gray-200 pb-4 mb-4'>
+              <div className='flex items-center justify-between cursor-pointer mb-4' onClick={() => setOpenBrand(!openBrand)}>
+                <h3 className='text-xs font-bold text-dark'>Brands</h3>
+                <svg className={`w-3 h-3 text-dark transition-transform ${openBrand ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'/></svg>
+              </div>
+              {openBrand && (
+                <div className='space-y-3'>
+                  {['MSI', 'ASUS', 'Gigabyte', 'Razer', 'Intel', 'AMD'].map((brand) => {
+                    const isSelected = localBrand === brand
+                    return (
+                      <div 
+                        key={brand}
+                        onClick={() => setLocalBrand(isSelected ? '' : brand)}
+                        className={`flex items-center justify-between text-xs cursor-pointer ${isSelected ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary transition-colors'}`}
+                      >
+                        <span>{brand}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
             
             {/* Compare Products & Wish List Box */}
@@ -365,7 +391,7 @@ export default function Products() {
           </div>
 
           {/* Active Filters */}
-          {(urlCategoryFilter !== 'All' || urlMinPrice || urlMaxPrice || searchFilter || urlColor) && (
+          {(urlCategoryFilter !== 'All' || urlMinPrice || urlMaxPrice || searchFilter || urlColor || urlBrand) && (
             <div className='flex flex-wrap items-center gap-3 mb-6 animate-fade-in'>
               <span className='text-sm font-bold text-dark'>Filters</span>
               
@@ -422,6 +448,21 @@ export default function Products() {
                       setLocalColor('')
                       const newParams = new URLSearchParams(searchParams)
                       newParams.delete('color')
+                      newParams.set('page', '1')
+                      setSearchParams(newParams)
+                  }} className='text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors'>
+                    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 20 20'><path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clipRule='evenodd'/></svg>
+                  </button>
+                </div>
+              )}
+
+              {urlBrand && (
+                <div className='flex items-center gap-2 px-3 py-1.5 border-2 border-gray-200 rounded bg-white text-[11px] font-bold text-dark'>
+                  Brand: {urlBrand}
+                  <button onClick={() => {
+                      setLocalBrand('')
+                      const newParams = new URLSearchParams(searchParams)
+                      newParams.delete('brand')
                       newParams.set('page', '1')
                       setSearchParams(newParams)
                   }} className='text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors'>

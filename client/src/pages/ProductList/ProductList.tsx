@@ -5,6 +5,43 @@ import { getProducts } from '../../api/product.api'
 import { addToCart } from '../../api/purchase.api'
 import { generateNameId } from '../../utils/utils'
 import { toast } from 'react-toastify'
+import { motion, AnimatePresence } from 'motion/react'
+
+const HERO_SLIDES = [
+  {
+    id: 1,
+    brand: 'msi',
+    tag: 'ONLY JAN 1 - JAN 31',
+    title: 'SCORE A BONUS GAMING MONITOR',
+    image: 'https://images.unsplash.com/photo-1547119957-637f8679db1e?auto=format&fit=crop&q=80&w=1400',
+    btnText: 'SHOP NOW',
+    color: 'bg-[#E83C45]'
+  },
+  {
+    id: 2,
+    brand: 'razer',
+    tag: 'NEW ARRIVAL',
+    title: 'THE ULTIMATE GAMING LAPTOP',
+    image: 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&q=80&w=1400',
+    btnText: 'DISCOVER MORE',
+    color: 'bg-[#44d62c]'
+  }
+]
+
+const TESTIMONIALS = [
+  {
+    text: "My first order arrived today in perfect condition. From the time I sent a question about the item to making the purchase, to the shipping and now the delivery, your company, Tecs, has stayed in touch. Such great service. I look forward to shopping on your site in the future and would highly recommend it.",
+    author: "Tama Brown"
+  },
+  {
+    text: "I was hesitant to buy a pre-built PC online, but the build quality and cable management exceeded my expectations. The system booted right up, and customer support was incredibly helpful when I had a question about the motherboard drivers. 10/10 would buy again.",
+    author: "James Wilson"
+  },
+  {
+    text: "The delivery was lightning fast! Placed an order for an RTX 4080 and a new power supply on Tuesday, and it was at my doorstep by Thursday morning. Everything was packaged securely with plenty of bubble wrap. You've earned a customer for life.",
+    author: "Sarah Jenkins"
+  }
+]
 
 const CATEGORY_ROWS = [
   {
@@ -28,19 +65,60 @@ const CATEGORY_ROWS = [
 ]
 
 const BRAND_LOGOS = [
-  { name: 'ROCCAT', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Roccat_logo.svg/512px-Roccat_logo.svg.png' },
-  { name: 'MSI', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/MSI_Logo.svg/512px-MSI_Logo.svg.png' },
-  { name: 'RAZER', url: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/40/Razer_snake_logo.svg/512px-Razer_snake_logo.svg.png' },
-  { name: 'THERMALTAKE', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Thermaltake_logo.svg/512px-Thermaltake_logo.svg.png' },
-  { name: 'ADATA', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Adata_logo.svg/512px-Adata_logo.svg.png' },
-  { name: 'HP', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/512px-HP_logo_2012.svg.png' },
-  { name: 'GIGABYTE', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Gigabyte_logo_2023.svg/512px-Gigabyte_logo_2023.svg.png' }
+  { name: 'ROCCAT', url: '/brands/roccat.svg' },
+  { name: 'MSI', url: '/brands/msi.svg' },
+  { name: 'RAZER', url: '/brands/razer.svg' },
+  { name: 'THERMALTAKE', url: '/brands/thermaltake.svg' },
+  { name: 'ADATA', url: '/brands/adata.svg' },
+  { name: 'HP', url: '/brands/hp.svg' },
+  { name: 'GIGABYTE', url: '/brands/gigabyte.svg' }
+]
+
+const INSTAGRAM_POSTS = [
+  {
+    id: 1,
+    image: 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&q=80&w=300&h=300',
+    text: 'If you’ve recently made a desktop PC or laptop purchase, you might want to consider adding peripherals to enhance your home office setup...',
+    date: '01.09.2023'
+  },
+  {
+    id: 2,
+    image: 'https://images.unsplash.com/photo-1587831990711-23ca6441447b?auto=format&fit=crop&q=80&w=300&h=300',
+    text: 'Upgrading your graphics card can breathe new life into your gaming experience. Check out our latest stock of RTX 40 series GPUs!',
+    date: '15.08.2023'
+  },
+  {
+    id: 3,
+    image: 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?auto=format&fit=crop&q=80&w=300&h=300',
+    text: 'Mechanical keyboards: a small upgrade with a massive impact on your daily typing and gaming sessions. Which switches do you prefer?',
+    date: '22.07.2023'
+  },
+  {
+    id: 4,
+    image: 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&q=80&w=300&h=300',
+    text: 'Portability meets performance! The new MSI Creator series laptops are now available. Perfect for video editing and 3D rendering on the go.',
+    date: '10.07.2023'
+  },
+  {
+    id: 5,
+    image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&q=80&w=300&h=300',
+    text: 'Don’t let your PC overheat this summer. We just received a huge batch of AIO liquid coolers from top brands. Keep those temps down!',
+    date: '05.06.2023'
+  },
+  {
+    id: 6,
+    image: 'https://images.unsplash.com/photo-1547119957-637f8679db1e?auto=format&fit=crop&q=80&w=300&h=300',
+    text: 'Build of the week: A stunning all-white custom loop PC featuring the latest Intel i9 and custom braided cables. Rate this build 1-10!',
+    date: '28.05.2023'
+  }
 ]
 
 export default function ProductList() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [newProductsIndex, setNewProductsIndex] = useState(0)
+  const [heroIndex, setHeroIndex] = useState(0)
+  const [testimonialIndex, setTestimonialIndex] = useState(0)
   const [activeTabs, setActiveTabs] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -51,6 +129,20 @@ export default function ProductList() {
       }
     })
     setActiveTabs(initialTabs)
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroIndex(prev => (prev + 1) % HERO_SLIDES.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTestimonialIndex(prev => (prev + 1) % TESTIMONIALS.length)
+    }, 6000)
+    return () => clearInterval(timer)
   }, [])
 
   const { data: productsData } = useQuery({
@@ -157,23 +249,49 @@ export default function ProductList() {
         
         {/* Hero Section */}
         <div className='relative w-full h-[328px] overflow-hidden mb-12 bg-black cursor-pointer group'>
-          <img 
-            src='https://images.unsplash.com/photo-1547119957-637f8679db1e?auto=format&fit=crop&q=80&w=1400' 
-            className='w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity' 
-            alt='Hero' 
-          />
-          <div className='absolute inset-0 flex flex-col justify-center px-16 z-10'>
-            <div className='w-12 h-12 bg-primary flex items-center justify-center text-white font-bold italic text-xl mb-4'>msi</div>
-            <div className='inline-block bg-[#E83C45] text-white text-xs font-bold px-3 py-1 mb-2 w-max rounded-sm'>ONLY JAN 1 - JAN 31</div>
-            <h1 className='text-4xl text-white font-black italic uppercase max-w-lg leading-tight mb-6'>
-              SCORE A BONUS GAMING MONITOR
-            </h1>
-            <button className='bg-white text-black font-black italic px-8 py-2.5 w-max hover:bg-gray-100 transition-colors'>
-              SHOP NOW
-            </button>
-          </div>
-          <div className='absolute top-1/2 left-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent text-gray-400 hover:text-white rounded-full cursor-pointer text-2xl font-light'>‹</div>
-          <div className='absolute top-1/2 right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent text-gray-400 hover:text-white rounded-full cursor-pointer text-2xl font-light'>›</div>
+          <AnimatePresence mode='wait'>
+            <motion.img 
+              key={heroIndex}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 0.7, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.5 }}
+              src={HERO_SLIDES[heroIndex].image} 
+              className='absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-90' 
+              alt='Hero' 
+            />
+          </AnimatePresence>
+          <AnimatePresence mode='wait'>
+            <motion.div 
+              key={heroIndex + 'text'}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 30 }}
+              transition={{ duration: 0.5 }}
+              className='absolute inset-0 flex flex-col justify-center px-16 z-10 pointer-events-none'
+            >
+              <div className='w-12 h-12 bg-primary flex items-center justify-center text-white font-bold italic text-xl mb-4 pointer-events-auto'>{HERO_SLIDES[heroIndex].brand}</div>
+              <div className={`inline-block ${HERO_SLIDES[heroIndex].color} text-white text-xs font-bold px-3 py-1 mb-2 w-max rounded-sm pointer-events-auto`}>{HERO_SLIDES[heroIndex].tag}</div>
+              <h1 className='text-4xl text-white font-black italic uppercase max-w-lg leading-tight mb-6 pointer-events-auto'>
+                {HERO_SLIDES[heroIndex].title}
+              </h1>
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigate('/products') }}
+                className='bg-white text-black font-black italic px-8 py-2.5 w-max hover:bg-gray-100 transition-colors pointer-events-auto'
+              >
+                {HERO_SLIDES[heroIndex].btnText}
+              </button>
+            </motion.div>
+          </AnimatePresence>
+          
+          <div 
+            onClick={(e) => { e.stopPropagation(); setHeroIndex(prev => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length) }}
+            className='absolute top-1/2 left-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent text-gray-400 hover:text-white rounded-full cursor-pointer text-2xl font-light z-20'
+          >‹</div>
+          <div 
+            onClick={(e) => { e.stopPropagation(); setHeroIndex(prev => (prev + 1) % HERO_SLIDES.length) }}
+            className='absolute top-1/2 right-4 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent text-gray-400 hover:text-white rounded-full cursor-pointer text-2xl font-light z-20'
+          >›</div>
         </div>
 
         {/* New Products */}
@@ -282,7 +400,7 @@ export default function ProductList() {
         {/* Brand Logos */}
         <div className='flex flex-wrap items-center justify-center md:justify-between gap-8 py-16 mt-8'>
           {BRAND_LOGOS.map((brand, idx) => (
-            <div key={idx} onClick={() => navigate('/products')} className='cursor-pointer group flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity duration-300 w-24 h-8 grayscale hover:grayscale-0'>
+            <div key={idx} onClick={() => navigate(`/products?search=${encodeURIComponent(brand.name)}`)} className='cursor-pointer group flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity duration-300 w-24 h-8 grayscale hover:grayscale-0'>
               <img src={brand.url} alt={brand.name} className='max-w-full max-h-full object-contain' />
             </div>
           ))}
@@ -292,20 +410,20 @@ export default function ProductList() {
         <div className='mb-20'>
           <h2 className='text-center text-[22px] font-bold text-dark mb-10'>Follow us on Instagram for News, Offers & More</h2>
           <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4'>
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} className='flex flex-col bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer'>
+            {INSTAGRAM_POSTS.map(post => (
+              <div key={post.id} className='flex flex-col bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer'>
                 <div className='w-full aspect-[4/3] overflow-hidden bg-gray-100'>
                   <img 
-                    src={`https://images.unsplash.com/photo-1547119957-637f8679db1e?auto=format&fit=crop&q=80&w=300&h=300&sig=${i}`} 
+                    src={post.image} 
                     alt='Instagram post'
                     className='w-full h-full object-cover hover:scale-105 transition-transform duration-500'
                   />
                 </div>
                 <div className='p-4 flex flex-col items-center text-center'>
                   <p className='text-[10px] text-gray-500 leading-relaxed line-clamp-4 mb-3'>
-                    If you've recently made a desktop PC or laptop purchase, you might want to consider adding peripherals to enhance your home office setup, your gaming rig, or your business workspace...
+                    {post.text}
                   </p>
-                  <p className='text-[9px] text-gray-400 font-medium'>01.09.2020</p>
+                  <p className='text-[9px] text-gray-400 font-medium'>{post.date}</p>
                 </div>
               </div>
             ))}
@@ -313,18 +431,40 @@ export default function ProductList() {
         </div>
 
         {/* Testimonial Section */}
-        <div className='bg-[#F5F7FF] py-16 px-4 mb-20 relative flex flex-col items-center justify-center rounded-sm'>
-          <div className='max-w-3xl mx-auto flex items-start gap-4'>
+        <div className='bg-[#F5F7FF] py-16 px-4 mb-20 relative flex flex-col items-center justify-center rounded-sm w-full overflow-hidden'>
+          <div className='max-w-3xl w-full mx-auto flex items-start gap-4 min-h-[140px]'>
             <div className='text-5xl font-serif text-dark opacity-30 mt-[-10px]'>“</div>
             <div className='flex-1'>
-              <p className='text-[14px] leading-relaxed text-dark text-center'>
-                My first order arrived today in perfect condition. From the time I sent a question about the item to making the purchase, to the shipping and now the delivery, your company, Tecs, has stayed in touch. Such great service. I look forward to shopping on your site in the future and would highly recommend it.
-              </p>
-              <div className='flex justify-end mt-4'>
-                <p className='text-[13px] font-bold text-dark'>- Tama Brown</p>
-              </div>
+              <AnimatePresence mode='wait'>
+                <motion.div
+                  key={testimonialIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.4 }}
+                  className='w-full'
+                >
+                  <p className='text-[14px] leading-relaxed text-dark text-left'>
+                    {TESTIMONIALS[testimonialIndex].text}
+                  </p>
+                  <div className='flex justify-end mt-4'>
+                    <p className='text-[13px] font-bold text-dark'>- {TESTIMONIALS[testimonialIndex].author}</p>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
+          
+          <div className='flex gap-2 mt-4'>
+            {TESTIMONIALS.map((_, i) => (
+              <div 
+                key={i} 
+                onClick={() => setTestimonialIndex(i)}
+                className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-colors duration-300 ${i === testimonialIndex ? 'bg-primary' : 'bg-gray-300 hover:bg-gray-400'}`}
+              ></div>
+            ))}
+          </div>
+
           <button className='mt-8 px-6 py-2 border-2 border-primary text-primary rounded-full font-bold text-[13px] hover:bg-primary hover:text-white transition-colors cursor-pointer'>
             Leave Us A Review
           </button>

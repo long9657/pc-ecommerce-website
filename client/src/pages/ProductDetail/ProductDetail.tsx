@@ -7,6 +7,7 @@ import { getReviews, createReview } from '../../api/review.api'
 import { toast } from 'react-toastify'
 
 import { getIdFromNameId } from '../../utils/utils'
+import { motion, AnimatePresence } from 'motion/react'
 
 const OUTPLAY_SLIDES = [
   {
@@ -212,7 +213,21 @@ export default function ProductDetail() {
                 
                 <div className='flex items-center gap-2'>
                   <div className='bg-slate-50 border border-gray-200 rounded px-3 py-2 flex items-center text-sm font-bold text-dark w-[60px] justify-between'>
-                    <span className='w-4 text-center'>{buyCount}</span>
+                    <input 
+                      type='number'
+                      value={buyCount}
+                      onChange={(e) => {
+                        let val = parseInt(e.target.value)
+                        if (isNaN(val)) return // allow empty briefly while typing
+                        if (val < 1) val = 1
+                        if (val > (product?.quantity || 1)) val = product.quantity
+                        setBuyCount(val)
+                      }}
+                      onBlur={(e) => {
+                        if (!e.target.value || parseInt(e.target.value) < 1) setBuyCount(1)
+                      }}
+                      className='w-8 text-center bg-transparent border-none outline-none font-bold text-dark appearance-none p-0 focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                    />
                     <div className='flex flex-col text-[10px] text-gray-400 ml-2'>
                       <span onClick={() => handleBuyCountChange('increase')} className='cursor-pointer hover:text-dark leading-none'>▲</span>
                       <span onClick={() => handleBuyCountChange('decrease')} className='cursor-pointer hover:text-dark leading-none'>▼</span>
@@ -365,20 +380,25 @@ export default function ProductDetail() {
               <div className='bg-[#0A0A0A] w-full text-white py-24 px-6 md:px-12 overflow-hidden'>
                 <div className='max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16'>
                   <div className='lg:w-5/12 flex flex-col relative min-h-[250px]'>
-                    <div 
-                      key={outplayIndex}
-                      className='animate-fade-in'
-                    >
-                      <h2 className='text-4xl md:text-[54px] font-light leading-tight mb-8 whitespace-pre-line'>
-                        {OUTPLAY_SLIDES[outplayIndex].title}
-                      </h2>
-                      <p className='text-[15px] text-gray-300 mb-8 leading-relaxed max-w-[420px] min-h-[80px]'>
-                        {OUTPLAY_SLIDES[outplayIndex].desc}
-                      </p>
-                      <p className='text-[13px] text-gray-500 max-w-[400px]'>
-                        {OUTPLAY_SLIDES[outplayIndex].note}
-                      </p>
-                    </div>
+                    <AnimatePresence mode='wait'>
+                      <motion.div 
+                        key={outplayIndex}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <h2 className='text-4xl md:text-[54px] font-light leading-tight mb-8 whitespace-pre-line'>
+                          {OUTPLAY_SLIDES[outplayIndex].title}
+                        </h2>
+                        <p className='text-[15px] text-gray-300 mb-8 leading-relaxed max-w-[420px] min-h-[80px]'>
+                          {OUTPLAY_SLIDES[outplayIndex].desc}
+                        </p>
+                        <p className='text-[13px] text-gray-500 max-w-[400px]'>
+                          {OUTPLAY_SLIDES[outplayIndex].note}
+                        </p>
+                      </motion.div>
+                    </AnimatePresence>
                     
                     {/* Pagination for outplay section */}
                     <div className='flex gap-2 mt-16'>
@@ -393,16 +413,22 @@ export default function ProductDetail() {
                   </div>
                   
                   <div className='lg:w-7/12 flex justify-center'>
-                    <div 
-                      key={outplayIndex + 'box'}
-                      className={`w-[450px] h-[300px] bg-gradient-to-br ${OUTPLAY_SLIDES[outplayIndex].colorFrom} to-black border ${OUTPLAY_SLIDES[outplayIndex].colorBorder} rounded-xl ${OUTPLAY_SLIDES[outplayIndex].colorShadow} flex flex-col items-center justify-center relative overflow-hidden group animate-fade-in`}
-                    >
-                       <div className='absolute inset-0 bg-[url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+")] opacity-50'></div>
-                       {OUTPLAY_SLIDES[outplayIndex].icon}
-                       <div className='text-3xl font-bold text-white z-10'>{OUTPLAY_SLIDES[outplayIndex].label}</div>
-                       <div className={`${OUTPLAY_SLIDES[outplayIndex].colorText} font-semibold tracking-widest mt-1 z-10`}>{OUTPLAY_SLIDES[outplayIndex].subLabel}</div>
-                       <div className={`absolute -bottom-10 -right-10 w-40 h-40 ${OUTPLAY_SLIDES[outplayIndex].colorGlow} rounded-full blur-[80px] opacity-50`}></div>
-                    </div>
+                    <AnimatePresence mode='wait'>
+                      <motion.div 
+                        key={outplayIndex + 'box'}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        transition={{ duration: 0.3 }}
+                        className={`w-[450px] h-[300px] bg-gradient-to-br ${OUTPLAY_SLIDES[outplayIndex].colorFrom} to-black border ${OUTPLAY_SLIDES[outplayIndex].colorBorder} rounded-xl ${OUTPLAY_SLIDES[outplayIndex].colorShadow} flex flex-col items-center justify-center relative overflow-hidden group`}
+                      >
+                         <div className='absolute inset-0 bg-[url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+")] opacity-50'></div>
+                         {OUTPLAY_SLIDES[outplayIndex].icon}
+                         <div className='text-3xl font-bold text-white z-10'>{OUTPLAY_SLIDES[outplayIndex].label}</div>
+                         <div className={`${OUTPLAY_SLIDES[outplayIndex].colorText} font-semibold tracking-widest mt-1 z-10`}>{OUTPLAY_SLIDES[outplayIndex].subLabel}</div>
+                         <div className={`absolute -bottom-10 -right-10 w-40 h-40 ${OUTPLAY_SLIDES[outplayIndex].colorGlow} rounded-full blur-[80px] opacity-50`}></div>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
