@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@heyputer/puter.js": "^2.5.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ms": "^2.1.0",
     "cors": "^2.8.6",

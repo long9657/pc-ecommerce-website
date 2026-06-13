@@ -20,6 +20,7 @@ import Dashboard from './pages/Admin/Dashboard/Dashboard'
 import OrdersAdmin from './pages/Admin/Orders/OrdersAdmin'
 import ProductsAdmin from './pages/Admin/Products/ProductsAdmin'
 import UsersAdmin from './pages/Admin/Users/UsersAdmin'
+import CategoriesAdmin from './pages/Admin/Categories/CategoriesAdmin'
 import About from './pages/About/About'
 import StaticInfo from './pages/StaticInfo/StaticInfo'
 
@@ -232,6 +233,10 @@ function useRouteElements() {
         {
           path: 'users',
           element: <UsersAdmin />
+        },
+        {
+          path: 'categories',
+          element: <CategoriesAdmin />
         }
       ]
     },

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import database from '../services/database.services'
 
 export const chatController = async (req: Request, res: Response) => {
@@ -10,9 +9,9 @@ export const chatController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Message is required' })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY
     if (!apiKey) {
-      return res.status(500).json({ message: 'GEMINI_API_KEY is not configured in the environment' })
+      return res.status(500).json({ message: 'OPENROUTER_API_KEY or GEMINI_API_KEY is not configured in the environment' })
     }
 
     // Fetch brief product info to feed into the AI prompt
@@ -30,15 +29,39 @@ ${productListText}
 If a user asks for a product not in this list, politely inform them that we do not currently have it in stock.
 If they ask about price or stock, refer to the list.`
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash', systemInstruction })
+    // Chuyển đổi format History từ format của Google sang format của OpenAI/OpenRouter
+    const formattedHistory = (history || []).map((msg: any) => ({
+      role: msg.role === 'model' ? 'assistant' : 'user',
+      content: msg.parts[0].text
+    }))
 
-    const chat = model.startChat({
-      history: history || []
+    const messages = [
+      { role: 'system', content: systemInstruction },
+      ...formattedHistory,
+      { role: 'user', content: message }
+    ]
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        // Sử dụng tính năng "Auto Router" của OpenRouter:
+        // Sẽ tự động chuyển qua lại giữa các model miễn phí nếu một cái bị nghẽn mạng
+        model: 'openrouter/free', 
+        messages: messages
+      })
     })
 
-    const result = await chat.sendMessage(message)
-    const responseText = result.response.text()
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(`OpenRouter Error: ${JSON.stringify(errorData)}`)
+    }
+
+    const data = await response.json()
+    const responseText = data.choices[0].message.content
 
     return res.status(200).json({
       message: 'Success',

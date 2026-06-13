@@ -99,7 +99,7 @@ export default function ProductsAdmin() {
       setEditProduct(null)
       setFormData({
         name: '', price: 0, price_before_discount: 0, quantity: 100, 
-        category_id: categories?.[0]?._id || '', image: '', description: ''
+        category_id: Array.isArray(categories) && categories[0] ? categories[0]._id : '', image: '', description: ''
       })
     }
     setIsModalOpen(true)
@@ -147,9 +147,9 @@ export default function ProductsAdmin() {
             className='w-full border border-gray-300 px-4 py-2 focus:border-primary outline-none bg-white rounded-md shadow-sm'
           >
             <option value=''>All</option>
-            {categories?.map((cat: any) => (
+            {Array.isArray(categories) ? categories.map((cat: any) => (
               <option key={cat._id} value={cat._id}>{cat.name}</option>
-            ))}
+            )) : null}
           </select>
         </div>
 
@@ -287,9 +287,9 @@ export default function ProductsAdmin() {
                   <label className='block text-sm font-semibold text-dark mb-1'>Category <span className='text-red-500'>*</span></label>
                   <select required value={formData.category_id} onChange={e => setFormData({...formData, category_id: e.target.value})} className='w-full border border-gray-300 px-4 py-2 rounded-md focus:border-primary outline-none bg-white'>
                     <option value='' disabled>Select category</option>
-                    {categories?.map((cat: any) => (
+                    {Array.isArray(categories) ? categories.map((cat: any) => (
                       <option key={cat._id} value={cat._id}>{cat.name}</option>
-                    ))}
+                    )) : null}
                   </select>
                 </div>
               </div>
