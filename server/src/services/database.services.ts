@@ -18,7 +18,14 @@ class Database {
   private db: Db
   private client: MongoClient
   constructor() {
-    this.client = new MongoClient(uri)
+    this.client = new MongoClient(uri, {
+      serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+      }
+    })
+
     this.db = this.client.db(process.env.DB_NAME)
   }
   async connect() {

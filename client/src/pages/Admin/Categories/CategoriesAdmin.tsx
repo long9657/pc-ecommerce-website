@@ -125,7 +125,7 @@ export default function CategoriesAdmin() {
                           className='w-full h-full object-contain p-1'
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              'https://via.placeholder.com/56x56?text=?'
+                              'https://placehold.co/56x56?text=?'
                           }}
                         />
                       </div>
@@ -246,10 +246,10 @@ export default function CategoriesAdmin() {
                 </button>
                 <button
                   type='submit'
-                  disabled={saveMutation.isLoading}
+                  disabled={saveMutation.isPending}
                   className='px-6 py-2.5 bg-primary text-white font-semibold rounded-md hover:bg-primary/90 transition shadow-sm disabled:opacity-50 text-sm'
                 >
-                  {saveMutation.isLoading ? 'Saving...' : editCategory ? 'Update Category' : 'Create Category'}
+                  {saveMutation.isPending ? 'Saving...' : editCategory ? 'Update Category' : 'Create Category'}
                 </button>
               </div>
             </form>

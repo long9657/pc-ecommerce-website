@@ -21,9 +21,8 @@ class ReviewServices {
 
     await database.products.updateOne(
       { _id: productId },
-      { 
+      {
         $set: { rating: newRating },
-        $inc: { sold: 1 }
       }
     )
 
@@ -32,7 +31,7 @@ class ReviewServices {
       { $match: { _id: result.insertedId } },
       {
         $lookup: {
-          from: process.env.DB_USER_COLLECTIONS as string || 'users',
+          from: process.env.DB_USER_COLLECTIONS || 'users',
           localField: 'user_id',
           foreignField: '_id',
           as: 'user'
@@ -57,7 +56,7 @@ class ReviewServices {
       { $sort: { created_at: -1 } },
       {
         $lookup: {
-          from: process.env.DB_USER_COLLECTIONS as string || 'users',
+          from: process.env.DB_USER_COLLECTIONS || 'users',
           localField: 'user_id',
           foreignField: '_id',
           as: 'user'

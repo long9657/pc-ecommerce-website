@@ -9,12 +9,19 @@
     "strict": true /* Enable all strict type-checking options. */,
     "skipLibCheck": true /* Skip type checking all .d.ts files. */,
     "baseUrl": ".", // Đường dẫn base cho các import
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "~/*": ["src/*"] // Đường dẫn tương đối cho các import (alias)
-    },
-    "ignoreDeprecations": "6.0"
+      "~/*": [
+        "src/*"
+      ] // Đường dẫn tương đối cho các import (alias)
+    }
   },
-  "files": ["src/type.d.ts"], // Các file dùng để defined global type cho dự án
-  "include": ["src/**/*"] // Đường dẫn include cho các file cần build
+  "files": [
+    "src/type.d.ts"
+  ], // Các file dùng để defined global type cho dự án
+  "include": [
+    "src/**/*"
+  ] // Đường dẫn include cho các file cần build
 }
